@@ -1,0 +1,139 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  userType  UserType @default(ALUMNO)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  recipes    Recipe[]
+  reviews    Review[]
+  courses    CourseEnrollment[]
+  createdCourses Course[] @relation("CourseCreator")
+}
+
+enum UserType {
+  ALUMNO
+  INSTRUCTOR
+  ADMIN
+}
+
+model Recipe {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  difficulty  String
+  category    String
+  rating      Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+  ingredients RecipeIngredient[]
+  steps       RecipeStep[]
+  reviews     Review[]
+}
+
+model RecipeIngredient {
+  id          Int      @id @default(autoincrement())
+  quantity    String
+  recipe      Recipe   @relation(fields: [recipeId], references: [id])
+  recipeId    Int
+  ingredient  Ingredient @relation(fields: [ingredientId], references: [id])
+  ingredientId Int
+}
+
+model RecipeStep {
+  id        Int      @id @default(autoincrement())
+  content   String
+  order     Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id])
+  recipeId  Int
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  recipe    Recipe?  @relation(fields: [recipeId], references: [id])
+  recipeId  Int?
+  course    Course?  @relation(fields: [courseId], references: [id])
+  courseId  Int?
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  type        String
+  category    String
+  difficulty  String
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  createdBy   User     @relation("CourseCreator", fields: [createdById], references: [id])
+  createdById String
+  modules     CourseModule[]
+  reviews     Review[]
+  enrollments CourseEnrollment[]
+}
+
+model CourseModule {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  order     Int
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  Int
+}
+
+model CourseEnrollment {
+  id            Int      @id @default(autoincrement())
+  paymentMethod String
+  enrolledAt    DateTime @default(now())
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+  course        Course   @relation(fields: [courseId], references: [id])
+  courseId      Int
+
+  @@unique([userId, courseId])
+}
+
+model Ingredient {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  unit            String?
+  defaultQuantity String?
+  recipes         RecipeIngredient[]
+}
+
+model Utensil {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+} 
