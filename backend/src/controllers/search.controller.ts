@@ -96,34 +96,6 @@ export const search = async (req: AuthRequest, res: Response) => {
       }));
     }
 
-    // Search resources
-    if (!type || type === 'resource') {
-      const resources = await prisma.resource.findMany({
-        where: {
-          OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
-          ],
-        },
-        take: searchLimit,
-        skip: searchOffset,
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      });
-
-      results.resources = resources.map((resource: PrismaResource) => ({
-        id: resource.id,
-        title: resource.title,
-        status: 'active',
-      }));
-    }
-
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: 'Error performing search' });
