@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import CustomScreenView from '@/components/CustomScreenView'
+import RecipeCard from '@/components/RecipeCard'
 
 const recipeTabs = ['Recomendados', 'Mas Vistos', 'Ultimos']
 const recipeData = [
@@ -102,19 +103,14 @@ export default function InicioScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
           renderItem={({ item }) => (
-            <View style={styles.recipeCard}>
-              <Image source={{ uri: item.image }} style={styles.recipeImage} />
-              <View style={styles.recipeInfo}>
-                <Text style={styles.recipeTitle}>{item.title}</Text>
-                {item.subtitle ? <Text style={styles.recipeSubtitle}>{item.subtitle}</Text> : null}
-                <View style={styles.recipeMeta}>
-                  <Ionicons name="time-outline" size={16} color="#fff" />
-                  <Text style={styles.recipeMetaText}>{item.time}</Text>
-                  <Ionicons name="star" size={16} color="#FFD700" style={{ marginLeft: 8 }} />
-                  <Text style={styles.recipeMetaText}>{item.rating}</Text>
-                </View>
-              </View>
-            </View>
+            <RecipeCard
+              id={item.id}
+              title={item.title}
+              subtitle={item.subtitle}
+              time={item.time}
+              rating={item.rating}
+              image={item.image}
+            />
           )}
         />
         {/* Cursos Destacados Section */}
@@ -250,46 +246,6 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: '#fff'
-  },
-  recipeCard: {
-    width: 220,
-    height: 260,
-    backgroundColor: '#222',
-    borderRadius: 24,
-    marginRight: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8
-  },
-  recipeImage: {
-    width: '100%',
-    height: 140
-  },
-  recipeInfo: {
-    flex: 1,
-    padding: 14,
-    justifyContent: 'flex-end'
-  },
-  recipeTitle: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 2
-  },
-  recipeSubtitle: {
-    color: '#CAC8C8',
-    fontSize: 13,
-    marginBottom: 8
-  },
-  recipeMeta: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  recipeMetaText: {
-    color: '#fff',
-    marginLeft: 4,
-    fontSize: 13
   },
   courseCard: {
     width: 220,

@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import CustomScreenView from '@/components/CustomScreenView';
-
-type CourseType = 'virtual' | 'online' | 'presencial';
 
 const modules = [
   'Introducción a la panadería artesanal',
@@ -14,51 +12,32 @@ const modules = [
   'Horneado y presentación final',
 ];
 
-export default function CursoScreen() {
-  const [type] = useState<CourseType>('virtual');
-
-  const getCourseDescription = () => {
-    switch (type) {
-      case 'virtual':
-        return 'Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede a material digital.';
-      case 'online':
-        return 'Aprende a tu ritmo con contenido pre-grabado, material descargable y acceso ilimitado a las lecciones.';
-      case 'presencial':
-        return 'Clases presenciales en nuestro estudio, con equipamiento profesional y atención personalizada.';
-      default:
-        return '';
-    }
-  };
-
+export default function CursoContenidoScreen() {
   return (
     <CustomScreenView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Course Image */}
-        <Image source={{ uri: 'https://picsum.photos/462/462' }} style={styles.courseImage} />
+        <Image source={{ uri: 'https://picsum.photos/210/210' }} style={styles.courseImage} />
 
         {/* Content Section */}
         <Text style={styles.sectionTitle}>Contenido</Text>
         <Text style={styles.contentDescription}>
-          {getCourseDescription()}
+          Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede a material digital.
         </Text>
 
         {/* Course Modules */}
         <View style={styles.modulesContainer}>
           {modules.map((module, index) => (
-            <View key={index} style={styles.moduleItem}>
+            <TouchableOpacity 
+              key={index} 
+              style={styles.moduleItem}
+              onPress={() => router.push('/curso/1/modulo/1')}
+            >
               <Text style={styles.moduleNumber}>{index + 1}.</Text>
               <Text style={styles.moduleTitle}>{module}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
-
-        {/* View Content Button */}
-        <TouchableOpacity 
-          style={styles.viewContentButton}
-          onPress={() => router.push('/curso-contenido')}
-        >
-          <Text style={styles.viewContentButtonText}>Ver contenido</Text>
-        </TouchableOpacity>
       </ScrollView>
     </CustomScreenView>
   );
@@ -72,7 +51,7 @@ const styles = StyleSheet.create({
   },
   courseImage: {
     width: '100%',
-    height: 462,
+    height: 210,
     resizeMode: 'cover',
     marginBottom: 12,
   },
@@ -93,7 +72,6 @@ const styles = StyleSheet.create({
   },
   modulesContainer: {
     gap: 16,
-    marginBottom: 24,
   },
   moduleItem: {
     flexDirection: 'row',
@@ -116,17 +94,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
     fontWeight: '500',
     color: '#A5A5A5',
-  },
-  viewContentButton: {
-    alignSelf: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  viewContentButtonText: {
-    color: '#1B1B1B',
-    fontSize: 18,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
   },
 }); 

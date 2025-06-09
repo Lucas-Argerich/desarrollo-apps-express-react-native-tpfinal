@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomScreenView from '@/components/CustomScreenView';
+import { useLocalSearchParams } from 'expo-router';
 
 const ingredients = [
   { id: '1', name: '2 Medallones de Carne Vacuna', amount: '120g c/u', image: 'https://picsum.photos/113/93' },
@@ -32,6 +33,8 @@ const reviews = [
 ];
 
 export default function RecetaScreen() {
+  const { recetaId: id } = useLocalSearchParams();
+  console.log(id);
   const [activeTab, setActiveTab] = useState('resumen');
   const [servings, setServings] = useState(1);
 

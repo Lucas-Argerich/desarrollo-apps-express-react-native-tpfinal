@@ -77,7 +77,7 @@ export default function CursoModuloScreen() {
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.navButton, styles.nextButton]}
-            onPress={() => router.push('/receta-pasos')}
+            onPress={() => router.push('/curso/1/pasos')}
           >
             <Text style={[styles.navButtonText, styles.nextButtonText]}>Siguiente</Text>
           </TouchableOpacity>

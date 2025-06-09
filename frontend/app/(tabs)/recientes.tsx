@@ -24,7 +24,7 @@ export default function RecientesScreen() {
         
         <TouchableOpacity 
           style={styles.continueCourse}
-          onPress={() => router.push('/curso')}
+          onPress={() => router.push('/curso/1')}
         >
           <Image 
             source={{ uri: 'https://picsum.photos/200/300' }}
@@ -56,7 +56,7 @@ export default function RecientesScreen() {
             image="https://picsum.photos/200/302"
             rating={4.7}
             time="45 min"
-            onPress={() => router.push('/receta')}
+            onPress={() => router.push('/receta/1')}
           />
           <Card
             type="recipe"
@@ -65,7 +65,7 @@ export default function RecientesScreen() {
             image="https://picsum.photos/200/303"
             rating={4.9}
             time="30 min"
-            onPress={() => router.push('/receta')}
+            onPress={() => router.push('/receta/2')}
           />
         </ScrollView>
 
