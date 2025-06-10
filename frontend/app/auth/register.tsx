@@ -11,6 +11,7 @@ type UserType = 'ESTUDIANTE' | 'CREADOR' | null;
 
 export default function RegisterScreen() {
   const [userType, setUserType] = useState<UserType>(null);
+  const [showVerification, setShowVerification] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     name: '',
@@ -68,13 +69,35 @@ export default function RegisterScreen() {
         formData.password,
         userTypeMap[userType as keyof typeof userTypeMap]
       );
-      router.replace('/');
+      setShowVerification(true);
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Error al registrarse');
     } finally {
       setLoading(false);
     }
   };
+
+  if (showVerification) {
+    return (
+      <CustomScreenView style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logoText}>Foody</Text>
+          </View>
+        </View>
+        <View style={styles.verificationContainer}>
+          <Ionicons name="mail" size={80} color="#EE964B" style={styles.verificationIcon} />
+          <Text style={styles.verificationTitle}>¡Registro exitoso!</Text>
+          <Text style={styles.verificationText}>
+            Hemos enviado un correo de verificación a {formData.email}. Por favor, revisa tu bandeja de entrada y haz clic en el enlace para verificar tu cuenta.
+          </Text>
+          <Button onPress={() => router.replace('/auth/login')}>
+            Ir a iniciar sesión
+          </Button>
+        </View>
+      </CustomScreenView>
+    );
+  }
 
   if (userType === null) {
     return (
@@ -282,5 +305,27 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     gap: 16,
+  },
+  verificationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    gap: 24,
+  },
+  verificationIcon: {
+    marginBottom: 16,
+  },
+  verificationTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1B1B1B',
+    textAlign: 'center',
+  },
+  verificationText: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 24,
   },
 }); 

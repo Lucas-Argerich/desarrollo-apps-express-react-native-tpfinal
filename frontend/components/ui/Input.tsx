@@ -35,6 +35,9 @@ export default function Input({
             style={[styles.input, style]}
             placeholderTextColor={placeholderTextColor}
             hitSlop={{ top: 20, bottom: 20, left: 50, right: 50 }}
+            autoComplete="off"
+            autoCorrect={false}
+            autoCapitalize="none"
             {...props}
           />
         </View>

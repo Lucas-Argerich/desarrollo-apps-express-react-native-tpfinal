@@ -4,9 +4,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../types';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import { MailerSend, EmailParams, Sender, Recipient } from 'mailersend';
 
 const prisma = new PrismaClient();
+const mailerSend = new MailerSend({
+  apiKey: process.env.MAILERSEND_API_KEY || '',
+});
 
 interface RegisterInput {
   name: string;
@@ -58,6 +61,9 @@ export const register = async (req: AuthRequest, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -65,8 +71,28 @@ export const register = async (req: AuthRequest, res: Response) => {
         email,
         password: hashedPassword,
         userType,
+        verificationToken,
       },
     });
+
+    // Send verification email
+    const sentFrom = new Sender(process.env.MAILERSEND_FROM_EMAIL || '', process.env.MAILERSEND_FROM_NAME || '');
+    const recipients = [new Recipient(email)];
+
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setSubject('Verificación de email')
+      .setTemplateId('k68zxl2e7q3lj905') // Replace with your actual template ID
+      .setPersonalization([{
+        email: email,
+        data: {
+          name: user.name,
+          verificationLink: `http://localhost:8000/api/auth/verify-email?token=${verificationToken}`,
+        },
+      }]);
+
+    await mailerSend.email.send(emailParams);
 
     // Generate JWT
     const token = jwt.sign(
@@ -83,7 +109,41 @@ export const register = async (req: AuthRequest, res: Response) => {
       token,
     });
   } catch (error) {
+    console.error('Error registrando usuario:', error);
     res.status(500).json({ error: 'Error registrando usuario' });
+  }
+};
+
+export const verifyEmail = async (req: AuthRequest, res: Response) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      res.status(400).json({ error: 'Token de verificación requerido' });
+      return;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { verificationToken: token },
+    });
+
+    if (!user) {
+      res.status(400).json({ error: 'Token de verificación inválido' });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationToken: null,
+      },
+    });
+
+    res.send('<h1 style="color: #1B1B1B; font-size: 24px; font-weight: 700; text-align: center;">Email verificado correctamente</h1>');
+  } catch (error) {
+    console.error('Error verificando email:', error);
+    res.status(500).json({ error: 'Error verificando email' });
   }
 };
 
@@ -94,6 +154,14 @@ export const login = async (req: AuthRequest, res: Response) => {
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password: true,
+        userType: true,
+        isVerified: true,
+      },
     });
 
     if (!user) {
@@ -106,6 +174,12 @@ export const login = async (req: AuthRequest, res: Response) => {
 
     if (!validPassword) {
       res.status(401).json({ error: 'Credenciales inválidas' });
+      return;
+    }
+
+    // Check if email is verified
+    if (!user.isVerified) {
+      res.status(403).json({ error: 'Debes verificar tu email antes de iniciar sesión.' });
       return;
     }
 
@@ -218,34 +292,27 @@ export const requestPasswordReset = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // Send email with reset token
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    const sentFrom = new Sender(process.env.MAILERSEND_FROM_EMAIL || '', process.env.MAILERSEND_FROM_NAME || '');
+    const recipients = [new Recipient(email)];
 
-    console.log('token:', resetToken)
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setSubject('Recuperación de contraseña')
+      .setTemplateId('3z0vkloj6p7g7qrx')
+      .setPersonalization([{
+        email: email,
+        data: {
+          name: user.name,
+          token: resetToken,
+        },
+      }]);
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM,
-      to: email,
-      subject: 'Recuperación de contraseña',
-      html: `
-        <h1>Recuperación de contraseña</h1>
-        <p>Has solicitado recuperar tu contraseña. Usa el siguiente token para continuar:</p>
-        <h2>${resetToken}</h2>
-        <p>Este token expirará en 1 hora.</p>
-      `,
-    });
+    await mailerSend.email.send(emailParams);
 
     res.json({ message: 'Si existe una cuenta con ese email, se ha enviado un token de recuperación' });
   } catch (error) {
-    console.error('Error solicitando recuperación de contraseña:', error);
+    console.error('Error solicitando recuperación de contraseña:', error, JSON.stringify(error));
     res.json({ error: 'Error solicitando recuperación de contraseña' })
   }
 };

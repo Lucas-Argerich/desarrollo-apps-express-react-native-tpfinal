@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getUser, updateUser, requestPasswordReset, verifyResetToken, resetPassword } from '../controllers/auth.controller';
+import { register, login, getUser, updateUser, requestPasswordReset, verifyResetToken, resetPassword, verifyEmail } from '../controllers/auth.controller';
 import { auth } from '../middleware/auth';
 
 const router = Router();
@@ -10,6 +10,7 @@ router.post('/login', login);
 router.post('/request-reset', requestPasswordReset);
 router.post('/verify-token', verifyResetToken);
 router.post('/reset-password', resetPassword);
+router.get('/verify-email', verifyEmail);
 
 // Protected routes
 router.get('/user', auth, getUser);

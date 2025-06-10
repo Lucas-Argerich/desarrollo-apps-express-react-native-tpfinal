@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notVerified, setNotVerified] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -22,8 +23,13 @@ export default function LoginScreen() {
       setLoading(true);
       await authService.login(email, password);
       router.replace('/');
-    } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Error al iniciar sesión');
+    } catch (error: any) {
+      console.log('message:', error.message)
+      if (error.message === 'Usuario no verificado') {
+        setNotVerified(true);
+      } else { 
+        Alert.alert('Error', error instanceof Error ? error.message : 'Error al iniciar sesión');
+      }
     } finally {
       setLoading(false);
     }
@@ -31,6 +37,20 @@ export default function LoginScreen() {
 
   return (
     <CustomScreenView style={styles.container}>
+      <Modal
+        visible={notVerified}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setNotVerified(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Usuario no verificado</Text>
+            <Text style={styles.modalText}>Revisa tu correo electrónico y haz click en el enlace de verificación para poder iniciar sesión.</Text>
+            <Button onPress={() => setNotVerified(false)}>Cerrar</Button>
+          </View>
+        </View>
+      </Modal>
       <View style={styles.header}>
         <Button onPress={() => router.back()} style={styles.iconButton}>
           <Ionicons name="close" size={24} color="#1B1B1B" />
@@ -118,5 +138,36 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
     fontWeight: '500',
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    width: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#EE964B',
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+    color: '#1B1B1B',
   },
 }); 

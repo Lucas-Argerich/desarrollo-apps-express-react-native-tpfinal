@@ -23,7 +23,11 @@ export const authService = {
         },
         body: JSON.stringify({ email, password })
       })
-  
+      
+      if (response.status === 403) {
+        throw new Error('Usuario no verificado')
+      }
+
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Error al iniciar sesión')
@@ -34,8 +38,7 @@ export const authService = {
       await AsyncStorage.setItem('user', JSON.stringify(data))
       return data
     } catch (error) {
-      console.log(error, 'error')
-      throw new Error('Error al iniciar sesión')
+      throw error
     }
   },
 
