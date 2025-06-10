@@ -57,7 +57,7 @@ export default function LoginScreen() {
         <Button onPress={handleLogin} loading={loading}>
           Iniciar Sesión
         </Button>
-        <Button onPress={() => {}} style={styles.linkButton} textStyle={styles.linkButtonText}>
+        <Button onPress={() => router.push('/auth/recuperar')} style={styles.linkButton} textStyle={styles.linkButtonText}>
           ¿Te has olvidado la contraseña?
         </Button>
         <View style={styles.divider} />
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 1,
   },
   form: {
-    gap: 16,
+    gap: 24,
   },
   divider: {
     height: 1,

@@ -76,5 +76,50 @@ export const authService = {
   async getUser(): Promise<any | null> {
     const user = await AsyncStorage.getItem('user')
     return user ? JSON.parse(user) : null
+  },
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/request-reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al solicitar recuperación de contraseña')
+    }
+  },
+
+  async verifyResetToken(email: string, token: string): Promise<void> {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/verify-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, token })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al verificar token')
+    }
+  },
+
+  async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, token, newPassword })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al restablecer contraseña')
+    }
   }
 }

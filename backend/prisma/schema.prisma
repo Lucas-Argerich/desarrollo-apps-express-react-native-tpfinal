@@ -19,6 +19,8 @@ model User {
   userType  UserType @default(ALUMNO)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  resetToken String?
+  resetTokenExpiry DateTime?
 
   // Relations
   recipes    Recipe[]
