@@ -8,9 +8,24 @@ importers:
 
   .:
     dependencies:
+      '@expo-google-fonts/inter':
+        specifier: ^0.4.1
+        version: 0.4.1
+      '@expo-google-fonts/montserrat':
+        specifier: ^0.4.1
+        version: 0.4.1
+      '@expo-google-fonts/pacifico':
+        specifier: ^0.4.0
+        version: 0.4.0
+      '@expo-google-fonts/roboto':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@expo/vector-icons':
         specifier: ^14.1.0
         version: 14.1.0(expo-font@13.3.1(expo@53.0.11(@babel/core@7.27.4)(@expo/metro-runtime@5.0.4(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0)))(react-native-webview@13.13.5(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react@19.0.0))(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+      '@react-native-async-storage/async-storage':
+        specifier: ^2.2.0
+        version: 2.2.0(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))
       '@react-navigation/bottom-tabs':
         specifier: ^7.3.10
         version: 7.3.14(@react-navigation/native@7.1.10(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native-safe-area-context@5.4.0(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native-screens@4.11.1(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
@@ -86,6 +101,9 @@ importers:
       react-native-webview:
         specifier: 13.13.5
         version: 13.13.5(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+      whatwg-fetch:
+        specifier: ^3.6.20
+        version: 3.6.20
     devDependencies:
       '@babel/core':
         specifier: ^7.25.2
@@ -661,6 +679,18 @@ packages:
     resolution: {integrity: sha512-0J+zgWxHN+xXONWIyPWKFMgVuJoZuGiIFu8yxk7RJjxkzpGmyja5wRFqZIVtjDVOQpV+Rw0iOAjYPE2eQyjr0w==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@expo-google-fonts/inter@0.4.1':
+    resolution: {integrity: sha512-ypL+XokTHEG+ie/nxNj/mS38afMrY4Li4oKvTJf9k9XvH7I21qfTGCsDtlZ6nIUWEAy1odoUZISdXT1nfMh4kA==}
+
+  '@expo-google-fonts/montserrat@0.4.1':
+    resolution: {integrity: sha512-jc1d17tadLK3Nc/qIKYyOM2pnxmdZrlPFOJtmNT0qzFdUe4Pzq1Y1eQwvCMSProRbQqsosASRZ/N3mzl6pmC+g==}
+
+  '@expo-google-fonts/pacifico@0.4.0':
+    resolution: {integrity: sha512-7TwX4Op8iBjDhXdNmAX8yXrNwoprdLyMQJ7Zyv+1j8gng/onEzekOwxLuTCxfcckSHW8cqXbA44mGb03Qjy0cw==}
+
+  '@expo-google-fonts/roboto@0.4.0':
+    resolution: {integrity: sha512-nODXt1mOxcTBYXbKbYw48z+SgPoyZMNajOdMEF2wN7vuypsUFKN/6HXYy6EBpR+tyZN406OyGb6xwi8JQsspfA==}
+
   '@expo/cli@0.24.14':
     resolution: {integrity: sha512-o+QYyfIBhSRTgaywKTLJhm2Fg5PrSeUVCXS+uQySamgoMjLNhHa8QwE64mW/FmJr5hZLiqUEQxb60FK4JcyqXg==}
     hasBin: true
@@ -866,6 +896,11 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  '@react-native-async-storage/async-storage@2.2.0':
+    resolution: {integrity: sha512-gvRvjR5JAaUZF8tv2Kcq/Gbt3JHwbKFYfmb445rhOj6NUMx3qPLixmDx5pZAyb9at1bYvJ4/eTUipU5aki45xw==}
+    peerDependencies:
+      react-native: ^0.0.0-0 || >=0.65 <1.0
 
   '@react-native/assets-registry@0.79.3':
     resolution: {integrity: sha512-Vy8DQXCJ21YSAiHxrNBz35VqVlZPpRYm50xRTWRf660JwHuJkFQG8cUkrLzm7AUriqUXxwpkQHcY+b0ibw9ejQ==}
@@ -2434,6 +2469,10 @@ packages:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
 
+  is-plain-obj@2.1.0:
+    resolution: {integrity: sha512-YWnfyRwxL/+SsrWYfOpUtz5b3YD+nyfkHvjbcanzk8zgyO4ASD67uVMRt8k5bM4lLMDnXfriRhOpemw+NfT1eA==}
+    engines: {node: '>=8'}
+
   is-regex@1.2.1:
     resolution: {integrity: sha512-MjYsKHO5O7mCsmRGxWcLWheFqN9DJ/2TmngvjKXihe6efViPqc274+Fx/4fYj/r03+ESvBdTXK0V6tA3rgez1g==}
     engines: {node: '>= 0.4'}
@@ -2725,6 +2764,10 @@ packages:
 
   memoize-one@6.0.0:
     resolution: {integrity: sha512-rkpe71W0N0c0Xz6QD0eJETuWAJGnJ9afsl1srmwPrI+yBCkge5EycXXbYRyvL29zZVUWQCY7InPRCv3GDXuZNw==}
+
+  merge-options@3.0.4:
+    resolution: {integrity: sha512-2Sug1+knBjkaMsMgf1ctR1Ujx+Ayku4EdJN4Z+C2+JzoeF7A3OZ9KM2GY0CpQS51NR61LTurMJrRKPhSs3ZRTQ==}
+    engines: {node: '>=10'}
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -4590,6 +4633,14 @@ snapshots:
       '@eslint/core': 0.14.0
       levn: 0.4.1
 
+  '@expo-google-fonts/inter@0.4.1': {}
+
+  '@expo-google-fonts/montserrat@0.4.1': {}
+
+  '@expo-google-fonts/pacifico@0.4.0': {}
+
+  '@expo-google-fonts/roboto@0.4.0': {}
+
   '@expo/cli@0.24.14':
     dependencies:
       '@0no-co/graphql.web': 1.1.2
@@ -4998,6 +5049,11 @@ snapshots:
       react: 19.0.0
     optionalDependencies:
       '@types/react': 19.0.14
+
+  '@react-native-async-storage/async-storage@2.2.0(react-native@0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0))':
+    dependencies:
+      merge-options: 3.0.4
+      react-native: 0.79.3(@babel/core@7.27.4)(@types/react@19.0.14)(react@19.0.0)
 
   '@react-native/assets-registry@0.79.3': {}
 
@@ -6888,6 +6944,8 @@ snapshots:
 
   is-number@7.0.0: {}
 
+  is-plain-obj@2.1.0: {}
+
   is-regex@1.2.1:
     dependencies:
       call-bound: 1.0.4
@@ -7187,6 +7245,10 @@ snapshots:
   memoize-one@5.2.1: {}
 
   memoize-one@6.0.0: {}
+
+  merge-options@3.0.4:
+    dependencies:
+      is-plain-obj: 2.1.0
 
   merge-stream@2.0.0: {}
 

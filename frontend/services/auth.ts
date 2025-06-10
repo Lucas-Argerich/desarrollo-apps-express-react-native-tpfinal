@@ -1,0 +1,80 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+interface LoginResponse {
+  id: string
+  name: string
+  email: string
+  userType: string
+  token: string
+}
+
+// Definir
+interface RegisterResponse extends LoginResponse {}
+
+export const authService = {
+  async login(email: string, password: string): Promise<LoginResponse> {
+    console.log(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, 'processing')
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ email, password })
+      })
+  
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Error al iniciar sesión')
+      }
+  
+      const data = await response.json()
+      await AsyncStorage.setItem('token', data.token)
+      await AsyncStorage.setItem('user', JSON.stringify(data))
+      return data
+    } catch (error) {
+      console.log(error, 'error')
+      throw new Error('Error al iniciar sesión')
+    }
+  },
+
+  async register(
+    name: string,
+    email: string,
+    password: string,
+    userType: string
+  ): Promise<RegisterResponse> {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, email, password, userType })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al registrarse')
+    }
+
+    const data = await response.json()
+    await AsyncStorage.setItem('token', data.token)
+    await AsyncStorage.setItem('user', JSON.stringify(data))
+    return data
+  },
+
+  async logout() {
+    await AsyncStorage.removeItem('token')
+    await AsyncStorage.removeItem('user')
+  },
+
+  async getToken(): Promise<string | null> {
+    return AsyncStorage.getItem('token')
+  },
+
+  async getUser(): Promise<any | null> {
+    const user = await AsyncStorage.getItem('user')
+    return user ? JSON.parse(user) : null
+  }
+}
