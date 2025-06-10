@@ -51,7 +51,7 @@ export const register = async (req: AuthRequest, res: Response) => {
     });
 
     if (existingUser) {
-      res.status(400).json({ error: 'User already exists' });
+      res.status(400).json({ error: 'Usuario con ese email ya existe' });
       return;
     }
 
@@ -83,7 +83,7 @@ export const register = async (req: AuthRequest, res: Response) => {
       token,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Error registering user' });
+    res.status(500).json({ error: 'Error registrando usuario' });
   }
 };
 
@@ -97,7 +97,7 @@ export const login = async (req: AuthRequest, res: Response) => {
     });
 
     if (!user) {
-      res.status(401).json({ error: 'Invalid credentials' });
+      res.status(401).json({ error: 'Credenciales inválidas' });
       return;
     }
 
@@ -105,7 +105,7 @@ export const login = async (req: AuthRequest, res: Response) => {
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
-      res.status(401).json({ error: 'Invalid credentials' });
+      res.status(401).json({ error: 'Credenciales inválidas' });
       return;
     }
 
@@ -124,14 +124,14 @@ export const login = async (req: AuthRequest, res: Response) => {
       token,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Error logging in' });
+    res.status(500).json({ error: 'Error iniciando sesión' });
   }
 };
 
 export const getUser = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'No autenticado' });
       return;
     }
 
@@ -147,20 +147,20 @@ export const getUser = async (req: AuthRequest, res: Response) => {
     });
 
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'Usuario no encontrado' });
       return;
     }
 
     res.json(user);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching user' });
+    res.status(500).json({ error: 'Error obteniendo usuario' });
   }
 };
 
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'No autenticado' });
       return;
     }
 
@@ -187,7 +187,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 
     res.json(user);
   } catch (error) {
-    res.status(500).json({ error: 'Error updating user' });
+    res.status(500).json({ error: 'Error actualizando usuario' });
   }
 };
 
@@ -201,12 +201,12 @@ export const requestPasswordReset = async (req: AuthRequest, res: Response) => {
 
     if (!user) {
       // Return success even if user doesn't exist for security
-      res.json({ message: 'If an account exists, a reset token has been sent' });
+      res.json({ message: 'Si existe una cuenta con ese email, se ha enviado un token de recuperación' });
       return;
     }
 
     // Generate reset token
-    const resetToken = crypto.randomBytes(4).toString('hex');
+    const resetToken = crypto.randomBytes(2).toString('hex');
     const tokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
 
     // Save token to database
@@ -243,11 +243,10 @@ export const requestPasswordReset = async (req: AuthRequest, res: Response) => {
       `,
     });
 
-    res.json({ message: 'If an account exists, a reset token has been sent' });
+    res.json({ message: 'Si existe una cuenta con ese email, se ha enviado un token de recuperación' });
   } catch (error) {
-    console.error('Error requesting password reset:', error);
-    // res.status(500).json({ error: 'Error requesting password reset' });
-    res.json({ error: 'Error requesting password reset' })
+    console.error('Error solicitando recuperación de contraseña:', error);
+    res.json({ error: 'Error solicitando recuperación de contraseña' })
   }
 };
 
@@ -266,14 +265,14 @@ export const verifyResetToken = async (req: AuthRequest, res: Response) => {
     });
 
     if (!user) {
-      res.status(400).json({ error: 'Invalid or expired token' });
+      res.status(400).json({ error: 'Token inválido o expirado' });
       return;
     }
 
-    res.json({ message: 'Token is valid' });
+    res.json({ message: 'Token válido' });
   } catch (error) {
-    console.error('Error verifying reset token:', error);
-    res.status(500).json({ error: 'Error verifying reset token' });
+    console.error('Error verificando token de recuperación:', error);
+    res.status(500).json({ error: 'Error verificando token de recuperación' });
   }
 };
 
@@ -292,7 +291,7 @@ export const resetPassword = async (req: AuthRequest, res: Response) => {
     });
 
     if (!user) {
-      res.status(400).json({ error: 'Invalid or expired token' });
+      res.status(400).json({ error: 'Token inválido o expirado' });
       return;
     }
 
@@ -309,9 +308,9 @@ export const resetPassword = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({ message: 'Password has been reset successfully' });
+    res.json({ message: 'Contraseña restablecida correctamente' });
   } catch (error) {
-    console.error('Error resetting password:', error);
-    res.status(500).json({ error: 'Error resetting password' });
+    console.error('Error restableciendo contraseña:', error);
+    res.status(500).json({ error: 'Error restableciendo contraseña' });
   }
 }; 
