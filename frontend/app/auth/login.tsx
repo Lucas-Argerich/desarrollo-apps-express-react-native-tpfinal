@@ -61,9 +61,9 @@ export default function LoginScreen() {
           ¿Te has olvidado la contraseña?
         </Button>
         <View style={styles.divider} />
-          <Button onPress={() => router.push('/auth/register')}>
-            Registrarse
-          </Button>
+        <Button onPress={() => router.push('/auth/register')}>
+          Registrarse
+        </Button>
       </View>
     </CustomScreenView>
   );

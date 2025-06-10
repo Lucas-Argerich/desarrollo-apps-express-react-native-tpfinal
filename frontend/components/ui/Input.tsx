@@ -16,12 +16,12 @@ export default function Input({
   ...props 
 }: InputProps) {
   return (
-    <Pressable onPress={Keyboard.dismiss} style={{ flex: 1 }}>
+    <Pressable onPress={Keyboard.dismiss} style={{ flex: 1, minHeight: 60, height: 'auto' }}>
       <View style={styles.container}>
         {label && <Text style={styles.label}>{label}</Text>}
         <View style={[
           styles.inputWrapper,
-          error && styles.inputWrapperError
+          error && styles.inputWrapperError,
         ]}
         >
           {icon && (
@@ -57,12 +57,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   inputWrapper: {
-    height: 58,
+    height: 'auto',
+    display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#EDEDED',
     borderRadius: 20,
     paddingHorizontal: 20,
+    paddingVertical: 12,
     gap: 10,
   },
   inputWrapperError: {

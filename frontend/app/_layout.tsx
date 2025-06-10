@@ -7,7 +7,7 @@ export default function Layout() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading) return router.push('/auth/register')
+    if (!isLoading) return
     // Simulate loading time or perform any necessary initialization
     const timer = setTimeout(() => {
       setIsLoading(false)
