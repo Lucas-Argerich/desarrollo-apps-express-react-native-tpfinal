@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { api } from './api'
+import * as ImagePicker from 'expo-image-picker'
 
 interface LoginResponse {
   id: string
@@ -13,8 +14,8 @@ interface StudentRegistrationData {
   cardNumber: string
   cardExpiry: string
   cardCVV: string
-  dniFront: string
-  dniBack: string
+  dniFront: ImagePicker.ImagePickerAsset
+  dniBack: ImagePicker.ImagePickerAsset
   tramiteNumber: string
 }
 
@@ -71,10 +72,20 @@ export const authService = {
     userType: string,
     studentData?: StudentRegistrationData
   ): Promise<LoginResponse> {
-    const files = studentData ? {
-      dniFront: await fetch(studentData.dniFront).then(r => r.blob()),
-      dniBack: await fetch(studentData.dniBack).then(r => r.blob())
-    } : undefined
+    const files = studentData
+      ? {
+          dniFront: {
+            uri: studentData.dniFront.uri,
+            name: studentData.dniFront.fileName || studentData.dniFront.uri.split('/').pop() || 'dni_front.jpg',
+            type: studentData.dniFront.mimeType || 'image'
+          },
+          dniBack: {
+            uri: studentData.dniBack.uri,
+            name: studentData.dniBack.fileName || studentData.dniBack.uri.split('/').pop() || 'dni_back.jpg',
+            type: studentData.dniBack.mimeType || 'image'
+          }
+        }
+      : undefined
 
     const response = await api('/auth/complete-registration', 'POST', 
       { 

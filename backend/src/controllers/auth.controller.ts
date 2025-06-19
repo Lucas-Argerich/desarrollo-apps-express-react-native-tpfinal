@@ -88,6 +88,7 @@ export const initialRegister = async (req: AuthRequest, res: Response) => {
         },
       }]);
 
+    console.log("Verification code: ", verificationCode)
     //await mailerSend.email.send(emailParams);
 
     res.status(201).json({ message: 'Código de verificación enviado' });
@@ -131,6 +132,18 @@ export const completeRegistration = async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        verificationCode: { not: null },
+      },
+    });
+
+    if (!user) {
+      res.status(400).json({ error: 'Usuario no encontrado o ya registrado' });
+      return;
+    }
+
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     const dniFront = files['dniFront'][0]
@@ -160,18 +173,6 @@ export const completeRegistration = async (req: AuthRequest, res: Response) => {
     if (frontResult.error || backResult.error) {
       console.error('Error uploading files:', frontResult.error || backResult.error);
       res.status(500).json({ error: 'Error al subir los archivos' });
-      return;
-    }
-
-    const user = await prisma.user.findFirst({
-      where: {
-        email,
-        verificationCode: { not: null },
-      },
-    });
-
-    if (!user) {
-      res.status(400).json({ error: 'Usuario no encontrado o ya registrado' });
       return;
     }
 

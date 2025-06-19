@@ -21,8 +21,8 @@ interface FormData {
   cardNumber?: string;
   cardExpiry?: string;
   cardCVV?: string;
-  dniFront?: string;
-  dniBack?: string;
+  dniFront?: ImagePicker.ImagePickerAsset;
+  dniBack?: ImagePicker.ImagePickerAsset;
   tramiteNumber?: string;
 }
 
@@ -43,20 +43,20 @@ export default function RegisterScreen() {
     setUserType(type);
   };
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  function handleInputChange<T extends keyof FormData>(field: T, value: FormData[T]) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const pickImage = async (type: 'front' | 'back') => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
 
     if (!result.canceled) {
-      handleInputChange(type === 'front' ? 'dniFront' : 'dniBack', result.assets[0].uri);
+      handleInputChange(type === 'front' ? 'dniFront' : 'dniBack', result.assets[0]);
     }
   };
 
