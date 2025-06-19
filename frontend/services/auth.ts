@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { api } from './api'
 
 interface LoginResponse {
   id: string
@@ -8,21 +9,19 @@ interface LoginResponse {
   token: string
 }
 
-// Definir
-interface RegisterResponse extends LoginResponse {}
+interface StudentRegistrationData {
+  cardNumber: string
+  cardExpiry: string
+  cardCVV: string
+  dniFront: string
+  dniBack: string
+  tramiteNumber: string
+}
 
 export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
-    console.log(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, 'processing')
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ email, password })
-      })
+      const response = await api('/auth/login', 'POST', { email, password })
       
       if (response.status === 403) {
         throw new Error('Usuario no verificado')
@@ -42,23 +41,60 @@ export const authService = {
     }
   },
 
-  async register(
-    name: string,
+  async initialRegister(
+    username: string,
     email: string,
-    password: string,
     userType: string
-  ): Promise<RegisterResponse> {
-    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ name, email, password, userType })
-    })
+  ): Promise<void> {
+    
+    const response = await api('/auth/initial-register', 'POST', { username, email, userType })
 
     if (!response.ok) {
       const error = await response.json()
-      throw new Error(error.error || 'Error al registrarse')
+      throw new Error(error.error || 'Error al iniciar el registro')
+    }
+  },
+
+  async verifyRegistrationCode(email: string, code: string): Promise<void> {
+    const response = await api('/auth/verify-registration-code', 'POST', { email, code })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al verificar el código')
+    }
+  },
+
+  async completeRegistration(
+    email: string,
+    name: string,
+    password: string,
+    userType: string,
+    studentData?: StudentRegistrationData
+  ): Promise<LoginResponse> {
+    const files = studentData ? {
+      dniFront: await fetch(studentData.dniFront).then(r => r.blob()),
+      dniBack: await fetch(studentData.dniBack).then(r => r.blob())
+    } : undefined
+
+    const response = await api('/auth/complete-registration', 'POST', 
+      { 
+        email, 
+        name, 
+        password, 
+        userType,
+        ...(studentData && {
+          cardNumber: studentData.cardNumber,
+          cardExpiry: studentData.cardExpiry,
+          cardCVV: studentData.cardCVV,
+          tramiteNumber: studentData.tramiteNumber
+        })
+      },
+      files
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al completar el registro')
     }
 
     const data = await response.json()
@@ -73,22 +109,17 @@ export const authService = {
   },
 
   async getToken(): Promise<string | null> {
-    return AsyncStorage.getItem('token')
+    return await AsyncStorage.getItem('token')
   },
 
   async getUser(): Promise<any | null> {
     const user = await AsyncStorage.getItem('user')
+
     return user ? JSON.parse(user) : null
   },
 
   async requestPasswordReset(email: string): Promise<void> {
-    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/request-reset`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email })
-    })
+    const response = await api('/auth/request-reset', 'POST', { email })
 
     if (!response.ok) {
       const error = await response.json()
@@ -97,13 +128,7 @@ export const authService = {
   },
 
   async verifyResetToken(email: string, token: string): Promise<void> {
-    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/verify-token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, token })
-    })
+    const response = await api('/auth/verify-token', 'POST', { email, token })
 
     if (!response.ok) {
       const error = await response.json()
@@ -112,13 +137,7 @@ export const authService = {
   },
 
   async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
-    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/reset-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, token, newPassword })
-    })
+    const response = await api('/auth/reset-password', 'POST', { email, token, newPassword })
 
     if (!response.ok) {
       const error = await response.json()

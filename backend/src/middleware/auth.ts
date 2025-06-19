@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
@@ -7,11 +7,11 @@ const prisma = new PrismaClient();
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.headers.authorization?.split(' ').at(1);
 
     if (!token) {
-      res.status(401).json({ error: 'No token provided' });
-      return;
+      req.user = null
+      return next()
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
@@ -35,8 +35,9 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
       userType: user.userType,
     };
 
-    next();
+    return next();
   } catch (error) {
+    console.error(error)
     res.status(401).json({ error: 'Invalid token' });
   }
 };

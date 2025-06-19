@@ -1,19 +1,19 @@
 import { Router } from 'express';
-import { register, login, getUser, updateUser, requestPasswordReset, verifyResetToken, resetPassword, verifyEmail } from '../controllers/auth.controller';
-import { auth } from '../middleware/auth';
+import { initialRegister, verifyRegistrationCode, completeRegistration, login, getUser, updateUser, requestPasswordReset, verifyResetToken, resetPassword } from '../controllers/auth.controller';
 
 const router = Router();
 
 // Public routes
-router.post('/register', register);
+router.post('/initial-register', initialRegister);
+router.post('/verify-registration-code', verifyRegistrationCode);
+router.post('/complete-registration', completeRegistration);
 router.post('/login', login);
 router.post('/request-reset', requestPasswordReset);
 router.post('/verify-token', verifyResetToken);
 router.post('/reset-password', resetPassword);
-router.get('/verify-email', verifyEmail);
 
 // Protected routes
-router.get('/user', auth, getUser);
-router.put('/user', auth, updateUser);
+router.get('/user', getUser);
+router.put('/user', updateUser);
 
 export default router; 

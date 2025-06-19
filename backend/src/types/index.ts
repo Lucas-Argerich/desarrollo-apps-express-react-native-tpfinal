@@ -6,7 +6,53 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     userType: 'ALUMNO' | 'INSTRUCTOR' | 'ADMIN';
-  };
+  } | null;
+  files?: {
+    [fieldname: string]: Express.Multer.File[];
+  } | Express.Multer.File[];
+}
+
+export interface InitialRegisterInput {
+  username: string;
+  email: string;
+  userType: 'ALUMNO' | 'INSTRUCTOR' | 'ADMIN';
+}
+
+export interface CompleteRegistrationInput {
+  email: string;
+  name: string;
+  password: string;
+  userType: 'ALUMNO' | 'INSTRUCTOR' | 'ADMIN';
+  cardNumber?: string;
+  cardExpiry?: string;
+  cardCVV?: string;
+  tramiteNumber?: string;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+  password?: string;
+}
+
+export interface RequestPasswordResetInput {
+  email: string;
+}
+
+export interface VerifyResetTokenInput {
+  email: string;
+  token: string;
+}
+
+export interface ResetPasswordInput {
+  email: string;
+  token: string;
+  newPassword: string;
 }
 
 // Recipe types

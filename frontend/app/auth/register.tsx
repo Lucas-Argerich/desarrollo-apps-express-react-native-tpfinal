@@ -1,18 +1,36 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import CustomScreenView from '@/components/CustomScreenView';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { authService } from '@/services/auth';
+import * as ImagePicker from 'expo-image-picker';
 
 type UserType = 'ESTUDIANTE' | 'CREADOR' | null;
+type RegistrationStage = 'INITIAL' | 'VERIFICATION' | 'COMPLETE';
+
+interface FormData {
+  username: string;
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  // Student specific fields
+  cardNumber?: string;
+  cardExpiry?: string;
+  cardCVV?: string;
+  dniFront?: string;
+  dniBack?: string;
+  tramiteNumber?: string;
+}
 
 export default function RegisterScreen() {
   const [userType, setUserType] = useState<UserType>(null);
-  const [showVerification, setShowVerification] = useState(false);
-  const [formData, setFormData] = useState({
+  const [registrationStage, setRegistrationStage] = useState<RegistrationStage>('INITIAL');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [formData, setFormData] = useState<FormData>({
     username: '',
     name: '',
     email: '',
@@ -25,12 +43,40 @@ export default function RegisterScreen() {
     setUserType(type);
   };
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateForm = () => {
-    if (!formData.username || !formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+  const pickImage = async (type: 'front' | 'back') => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      handleInputChange(type === 'front' ? 'dniFront' : 'dniBack', result.assets[0].uri);
+    }
+  };
+
+  const validateInitialForm = () => {
+    if (!formData.username || !formData.email) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      Alert.alert('Error', 'Por favor ingresa un email válido');
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateCompleteForm = () => {
+    if (!formData.name || !formData.password || !formData.confirmPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return false;
     }
@@ -45,17 +91,19 @@ export default function RegisterScreen() {
       return false;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
-      return false;
+    if (userType === 'ESTUDIANTE') {
+      if (!formData.cardNumber || !formData.cardExpiry || !formData.cardCVV || 
+          !formData.dniFront || !formData.dniBack || !formData.tramiteNumber) {
+        Alert.alert('Error', 'Por favor completa todos los campos requeridos para estudiantes');
+        return false;
+      }
     }
 
     return true;
   };
 
-  const handleRegister = async () => {
-    if (!validateForm()) return;
+  const handleInitialRegister = async () => {
+    if (!validateInitialForm()) return;
 
     try {
       setLoading(true);
@@ -63,13 +111,12 @@ export default function RegisterScreen() {
         'ESTUDIANTE': 'ALUMNO',
         'CREADOR': 'INSTRUCTOR'
       };
-      await authService.register(
-        formData.name,
+      await authService.initialRegister(
+        formData.username,
         formData.email,
-        formData.password,
         userTypeMap[userType as keyof typeof userTypeMap]
       );
-      setShowVerification(true);
+      setRegistrationStage('VERIFICATION');
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Error al registrarse');
     } finally {
@@ -77,24 +124,178 @@ export default function RegisterScreen() {
     }
   };
 
-  if (showVerification) {
+  const handleVerifyCode = async () => {
+    if (!verificationCode) {
+      Alert.alert('Error', 'Por favor ingresa el código de verificación');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await authService.verifyRegistrationCode(formData.email, verificationCode);
+      setRegistrationStage('COMPLETE');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Error al verificar el código');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteRegister = async () => {
+    if (!validateCompleteForm()) return;
+
+    try {
+      setLoading(true);
+      const userTypeMap = {
+        'ESTUDIANTE': 'ALUMNO',
+        'CREADOR': 'INSTRUCTOR'
+      };
+      await authService.completeRegistration(
+        formData.email,
+        formData.name,
+        formData.password,
+        userTypeMap[userType as keyof typeof userTypeMap],
+        userType === 'ESTUDIANTE' ? {
+          cardNumber: formData.cardNumber!,
+          cardExpiry: formData.cardExpiry!,
+          cardCVV: formData.cardCVV!,
+          dniFront: formData.dniFront!,
+          dniBack: formData.dniBack!,
+          tramiteNumber: formData.tramiteNumber!
+        } : undefined
+      );
+      router.replace('/auth/login');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Error al completar el registro');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (registrationStage === 'VERIFICATION') {
     return (
       <CustomScreenView style={styles.container}>
         <View style={styles.header}>
+          <Button onPress={() => setRegistrationStage('INITIAL')} style={styles.iconButton}>
+            <Ionicons name="arrow-back" size={24} color="#1B1B1B" />
+          </Button>
           <View style={styles.logoContainer}>
             <Text style={styles.logoText}>Foody</Text>
           </View>
         </View>
         <View style={styles.verificationContainer}>
           <Ionicons name="mail" size={80} color="#EE964B" style={styles.verificationIcon} />
-          <Text style={styles.verificationTitle}>¡Registro exitoso!</Text>
+          <Text style={styles.verificationTitle}>Verificación de Email</Text>
           <Text style={styles.verificationText}>
-            Hemos enviado un correo de verificación a {formData.email}. Por favor, revisa tu bandeja de entrada y haz clic en el enlace para verificar tu cuenta.
+            Hemos enviado un código de verificación a {formData.email}. Por favor, ingresa el código para continuar con el registro.
           </Text>
-          <Button onPress={() => router.replace('/auth/login')}>
-            Ir a iniciar sesión
+          <Input
+            label="Código de Verificación"
+            placeholder="Ingresa el código"
+            value={verificationCode}
+            onChangeText={setVerificationCode}
+            keyboardType="default"
+            maxLength={6}
+          />
+          <Button onPress={handleVerifyCode} loading={loading}>
+            Verificar Código
           </Button>
         </View>
+      </CustomScreenView>
+    );
+  }
+
+  if (registrationStage === 'COMPLETE') {
+    return (
+      <CustomScreenView style={styles.container}>
+        <ScrollView>
+          <View style={styles.header}>
+            <Button onPress={() => setRegistrationStage('VERIFICATION')} style={styles.iconButton}>
+              <Ionicons name="arrow-back" size={24} color="#1B1B1B" />
+            </Button>
+            <View style={styles.logoContainer}>
+              <Text style={styles.logoText}>Foody</Text>
+            </View>
+          </View>
+          <View style={styles.formContainer}>
+            <Input
+              label="Nombre"
+              placeholder="Nombre completo"
+              value={formData.name}
+              onChangeText={value => handleInputChange('name', value)}
+              icon="badge"
+            />
+            <Input
+              label="Contraseña"
+              placeholder="Contraseña"
+              value={formData.password}
+              onChangeText={value => handleInputChange('password', value)}
+              secureTextEntry
+              icon="lock"
+            />
+            <Input
+              label="Repite la Contraseña"
+              placeholder="Contraseña"
+              value={formData.confirmPassword}
+              onChangeText={value => handleInputChange('confirmPassword', value)}
+              secureTextEntry
+              icon="lock"
+            />
+
+            {userType === 'ESTUDIANTE' && (
+              <>
+                <Text style={styles.sectionTitle}>Información de Pago</Text>
+                <Input
+                  label="Número de Tarjeta"
+                  placeholder="XXXX XXXX XXXX XXXX"
+                  value={formData.cardNumber}
+                  onChangeText={value => handleInputChange('cardNumber', value)}
+                  keyboardType="number-pad"
+                  maxLength={16}
+                />
+                <View style={styles.inputRow}>
+                  <Input
+                    label="Vencimiento"
+                    placeholder="MM/AA"
+                    value={formData.cardExpiry}
+                    onChangeText={value => handleInputChange('cardExpiry', value)}
+                    maxLength={5}
+                  />
+                  <Input
+                    label="CVV"
+                    placeholder="XXX"
+                    value={formData.cardCVV}
+                    onChangeText={value => handleInputChange('cardCVV', value)}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                    secureTextEntry
+                  />
+                </View>
+
+                <Text style={styles.sectionTitle}>Documentación</Text>
+                <Input
+                  label="Número de Trámite"
+                  placeholder="Número de trámite del DNI"
+                  value={formData.tramiteNumber}
+                  onChangeText={value => handleInputChange('tramiteNumber', value)}
+                  keyboardType="number-pad"
+                />
+                <View style={styles.dniUploadContainer}>
+                  <Button onPress={() => pickImage('front')} style={styles.dniUploadButton}>
+                    {formData.dniFront ? 'DNI Frente ✓' : 'Subir DNI Frente'}
+                  </Button>
+                  <Button onPress={() => pickImage('back')} style={styles.dniUploadButton}>
+                    {formData.dniBack ? 'DNI Dorso ✓' : 'Subir DNI Dorso'}
+                  </Button>
+                </View>
+              </>
+            )}
+
+            <Button onPress={handleCompleteRegister} loading={loading}>
+              Completar Registro
+            </Button>
+          </View>
+        </ScrollView>
       </CustomScreenView>
     );
   }
@@ -143,23 +344,14 @@ export default function RegisterScreen() {
         </View>
       </View>
       <View style={styles.formContainer}>
-        <View style={styles.inputRow}>
-          <Input
-            label="Usuario"
-            placeholder="Nombre de usuario"
-            value={formData.username}
-            onChangeText={value => handleInputChange('username', value)}
-            autoCapitalize="none"
-            icon="person"
-          />
-          <Input
-            label="Nombre"
-            placeholder="Nombre de pila"
-            value={formData.name}
-            onChangeText={value => handleInputChange('name', value)}
-            icon="badge"
-          />
-        </View>
+        <Input
+          label="Usuario"
+          placeholder="Nombre de usuario"
+          value={formData.username}
+          onChangeText={value => handleInputChange('username', value)}
+          autoCapitalize="none"
+          icon="person"
+        />
         <Input
           label="Email"
           placeholder="Email del usuario"
@@ -169,24 +361,8 @@ export default function RegisterScreen() {
           autoCapitalize="none"
           icon="email"
         />
-        <Input
-          label="Contraseña"
-          placeholder="Contraseña"
-          value={formData.password}
-          onChangeText={value => handleInputChange('password', value)}
-          secureTextEntry
-          icon="lock"
-        />
-        <Input
-          label="Repite la Contraseña"
-          placeholder="Contraseña"
-          value={formData.confirmPassword}
-          onChangeText={value => handleInputChange('confirmPassword', value)}
-          secureTextEntry
-          icon="lock"
-        />
-        <Button onPress={handleRegister} loading={loading}>
-          Registrarse
+        <Button onPress={handleInitialRegister} loading={loading}>
+          Continuar
         </Button>
         <View style={styles.divider} />
         <View style={styles.loginContainer}>
@@ -249,83 +425,80 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
   },
   optionImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    padding: 20,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 9 },
-    shadowOpacity: 0.15,
-    shadowRadius: 19,
-    elevation: 5,
-    marginHorizontal: 16,
+    marginBottom: 8,
   },
   optionText: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#1B1B1B',
-    fontSize: 20,
-    fontFamily: 'Roboto',
-    fontWeight: 'bold',
-    letterSpacing: 0.1,
-    textAlign: 'center',
-    marginHorizontal: 16,
+    marginBottom: 24,
+  },
+  formContainer: {
+    gap: 16,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
   divider: {
-    width: 142,
-    height: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: '#D9D9D9',
-    marginVertical: 20,
-    alignSelf: 'center',
+    height: 1,
+    backgroundColor: '#E5E5E5',
+    marginVertical: 24,
   },
   loginContainer: {
     alignItems: 'center',
   },
   loginText: {
-    color: '#1B1B1B',
-    textAlign: 'center',
+    fontSize: 14,
   },
   loginTextRegular: {
-    fontFamily: 'Roboto',
-    fontWeight: '500',
+    color: '#666666',
   },
   loginTextBold: {
-    fontFamily: 'Roboto',
-    fontWeight: 'bold',
-  },
-  formContainer: {
-    flex: 1,
-    gap: 16,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    gap: 16,
+    color: '#EE964B',
+    fontWeight: '600',
   },
   verificationContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    gap: 24,
+    padding: 20,
   },
   verificationIcon: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   verificationTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#1B1B1B',
-    textAlign: 'center',
+    marginBottom: 12,
   },
   verificationText: {
     fontSize: 16,
     color: '#666666',
     textAlign: 'center',
-    lineHeight: 24,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1B1B1B',
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  dniUploadContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  dniUploadButton: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
   },
 }); 

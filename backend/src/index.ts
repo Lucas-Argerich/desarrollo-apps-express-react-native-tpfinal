@@ -1,6 +1,8 @@
-import express, { Express } from 'express';
+import express, { Express, RequestHandler } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { file } from './middleware/file';
+import { auth } from './middleware/auth';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -16,8 +18,10 @@ const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(file);
+app.use(express.json());
+app.use(auth);
 
 // Routes
 app.use('/api/auth', authRoutes);
