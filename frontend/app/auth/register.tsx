@@ -107,14 +107,9 @@ export default function RegisterScreen() {
 
     try {
       setLoading(true);
-      const userTypeMap = {
-        'ESTUDIANTE': 'ALUMNO',
-        'CREADOR': 'INSTRUCTOR'
-      };
       await authService.initialRegister(
         formData.username,
         formData.email,
-        userTypeMap[userType as keyof typeof userTypeMap]
       );
       setRegistrationStage('VERIFICATION');
     } catch (error) {
@@ -146,22 +141,17 @@ export default function RegisterScreen() {
 
     try {
       setLoading(true);
-      const userTypeMap = {
-        'ESTUDIANTE': 'ALUMNO',
-        'CREADOR': 'INSTRUCTOR'
-      };
       await authService.completeRegistration(
         formData.email,
         formData.name,
         formData.password,
-        userTypeMap[userType as keyof typeof userTypeMap],
         userType === 'ESTUDIANTE' ? {
-          cardNumber: formData.cardNumber!,
-          cardExpiry: formData.cardExpiry!,
-          cardCVV: formData.cardCVV!,
+          numeroTarjeta: formData.cardNumber!,
+          vencimientoTarjeta: formData.cardExpiry!,
+          CVVTarjeta: formData.cardCVV!,
+          numeroTramite: formData.tramiteNumber!,
           dniFront: formData.dniFront!,
-          dniBack: formData.dniBack!,
-          tramiteNumber: formData.tramiteNumber!
+          dniBack: formData.dniBack!
         } : undefined
       );
       router.replace('/auth/login');

@@ -222,7 +222,7 @@ export const completeRegistration = async (req: AuthRequest, res: Response) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { idUsuario: updatedUser.idUsuario, mail: updatedUser.mail },
+      { id: updatedUser.idUsuario, email: updatedUser.mail },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
@@ -246,6 +246,7 @@ export const login = async (req: AuthRequest, res: Response) => {
     // Find user
     const user = await prisma.usuario.findUnique({
       where: { mail },
+      include: { alumno: true },
     });
 
     if (!user) {
@@ -279,6 +280,7 @@ export const login = async (req: AuthRequest, res: Response) => {
       nombre: user.nombre,
       mail: user.mail,
       token,
+      rol: user.alumno ? 'alumno' : 'profesor',
     });
   } catch (error) {
     res.status(500).json({ error: 'Error iniciando sesión' });
@@ -294,6 +296,7 @@ export const getUser = async (req: AuthRequest, res: Response) => {
 
     const user = await prisma.usuario.findUnique({
       where: { idUsuario: req.user.idUsuario },
+      include: { alumno: true },
     });
 
     if (!user) {
@@ -301,7 +304,12 @@ export const getUser = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    res.json(user);
+    res.json({
+      idUsuario: user.idUsuario,
+      nombre: user.nombre,
+      mail: user.mail,
+      rol: user.alumno ? 'alumno' : 'profesor'
+    });
   } catch (error) {
     res.status(500).json({ error: 'Error obteniendo usuario' });
   }

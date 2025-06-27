@@ -11,18 +11,26 @@ interface LoginResponse {
 }
 
 interface StudentRegistrationData {
-  cardNumber: string
-  cardExpiry: string
-  cardCVV: string
+  numeroTarjeta: string
+  vencimientoTarjeta: string
+  CVVTarjeta: string
+  numeroTramite: string
   dniFront: ImagePicker.ImagePickerAsset
   dniBack: ImagePicker.ImagePickerAsset
-  tramiteNumber: string
+}
+
+export interface User {
+  id: string
+  email: string
+  nombre: string
+  token: string
+  rol: string
 }
 
 export const authService = {
-  async login(email: string, password: string): Promise<LoginResponse> {
+  async login(mail: string, password: string): Promise<User> {
     try {
-      const response = await api('/auth/login', 'POST', { email, password })
+      const response = await api('/auth/login', 'POST', { mail, password })
       
       if (response.status === 403) {
         throw new Error('Usuario no verificado')
@@ -34,21 +42,28 @@ export const authService = {
       }
   
       const data = await response.json()
-      await AsyncStorage.setItem('token', data.token)
-      await AsyncStorage.setItem('user', JSON.stringify(data))
-      return data
+      const user = {
+        id: data.id,
+        email: data.mail,
+        nombre: data.nombre,
+        token: data.token,
+        rol: data.rol
+      }
+
+      await AsyncStorage.setItem('token', user.token)
+      await AsyncStorage.setItem('user', JSON.stringify(user))
+      return user
     } catch (error) {
       throw error
     }
   },
 
   async initialRegister(
-    username: string,
-    email: string,
-    userType: string
+    nickname: string,
+    mail: string,
   ): Promise<void> {
     
-    const response = await api('/auth/initial-register', 'POST', { username, email, userType })
+    const response = await api('/auth/initial-register', 'POST', { nickname, mail })
 
     if (!response.ok) {
       const error = await response.json()
@@ -56,8 +71,8 @@ export const authService = {
     }
   },
 
-  async verifyRegistrationCode(email: string, code: string): Promise<void> {
-    const response = await api('/auth/verify-registration-code', 'POST', { email, code })
+  async verifyRegistrationCode(mail: string, code: string): Promise<void> {
+    const response = await api('/auth/verify-registration-code', 'POST', { mail, code })
 
     if (!response.ok) {
       const error = await response.json()
@@ -66,10 +81,9 @@ export const authService = {
   },
 
   async completeRegistration(
-    email: string,
-    name: string,
+    mail: string,
+    nombre: string,
     password: string,
-    userType: string,
     studentData?: StudentRegistrationData
   ): Promise<LoginResponse> {
     const files = studentData
@@ -89,15 +103,14 @@ export const authService = {
 
     const response = await api('/auth/complete-registration', 'POST', 
       { 
-        email, 
-        name, 
+        mail, 
+        nombre, 
         password, 
-        userType,
         ...(studentData && {
-          cardNumber: studentData.cardNumber,
-          cardExpiry: studentData.cardExpiry,
-          cardCVV: studentData.cardCVV,
-          tramiteNumber: studentData.tramiteNumber
+          numeroTarjeta: studentData.numeroTarjeta,
+          vencimientoTarjeta: studentData.vencimientoTarjeta,
+          CVVTarjeta: studentData.CVVTarjeta,
+          numeroTramite: studentData.numeroTramite
         })
       },
       files
@@ -129,8 +142,8 @@ export const authService = {
     return user ? JSON.parse(user) : null
   },
 
-  async requestPasswordReset(email: string): Promise<void> {
-    const response = await api('/auth/request-reset', 'POST', { email })
+  async requestPasswordReset(mail: string): Promise<void> {
+    const response = await api('/auth/request-reset', 'POST', { mail })
 
     if (!response.ok) {
       const error = await response.json()
@@ -138,8 +151,8 @@ export const authService = {
     }
   },
 
-  async verifyResetToken(email: string, token: string): Promise<void> {
-    const response = await api('/auth/verify-token', 'POST', { email, token })
+  async verifyResetToken(mail: string, token: string): Promise<void> {
+    const response = await api('/auth/verify-token', 'POST', { mail, token })
 
     if (!response.ok) {
       const error = await response.json()
@@ -147,8 +160,8 @@ export const authService = {
     }
   },
 
-  async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
-    const response = await api('/auth/reset-password', 'POST', { email, token, newPassword })
+  async resetPassword(mail: string, token: string, newPassword: string): Promise<void> {
+    const response = await api('/auth/reset-password', 'POST', { mail, token, newPassword })
 
     if (!response.ok) {
       const error = await response.json()

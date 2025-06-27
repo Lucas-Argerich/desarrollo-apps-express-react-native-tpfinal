@@ -15,7 +15,7 @@ model Usuario {
   idUsuario     Int        @id @default(autoincrement())
   mail          String?    @unique @db.VarChar(150)
   nickname      String     @db.VarChar(100)
-  password      String?     @db.VarChar(40)
+  password      String?     @db.VarChar(60)
   habilitado    String     @db.VarChar(2)
   nombre        String?    @db.VarChar(150)
   direccion     String?    @db.VarChar(150)
@@ -29,8 +29,8 @@ model Usuario {
 model Alumno {
   idAlumno         Int      @id
   numeroTarjeta    String? @db.VarChar(12)
-  dniFrente        String? @db.VarChar(300)
-  dniFondo         String? @db.VarChar(300)
+  dniFrente        String? @db.Text
+  dniFondo         String? @db.Text
   tramite          String? @db.VarChar(12)
   cuentaCorriente  Decimal? @db.Decimal(12,2)
   usuario          Usuario  @relation(fields: [idAlumno], references: [idUsuario])
