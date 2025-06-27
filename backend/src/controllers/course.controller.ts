@@ -14,215 +14,147 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
   try {
     const { limit = '10', offset = '0' }: CourseQuery = req.query;
 
-    const courses = await prisma.course.findMany({
+    const cursos = await prisma.curso.findMany({
       take: Number(limit),
       skip: Number(offset),
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        modules: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-        reviews: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
     });
 
-    res.json(courses);
+    res.json(cursos);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching courses' });
+    res.status(500).json({ error: 'Error al obtener cursos' });
   }
 };
 
 export const getCourse = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
 
-    const course = await prisma.course.findUnique({
-      where: { id: Number(id) },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        modules: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-        reviews: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
+    const curso = await prisma.curso.findUnique({
+      where: { idCurso: id },
     });
 
-    if (!course) {
-      res.status(404).json({ error: 'Course not found' });
+    if (!curso) {
+      res.status(404).json({ error: 'Curso no encontrado' });
       return;
     }
 
-    res.json(course);
+    res.json(curso);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching course' });
+    res.status(500).json({ error: 'Error al obtener curso' });
   }
 };
 
 export const createCourse = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'No autenticado' });
       return;
     }
 
     const courseData: CourseCreateInput = req.body;
 
-    const course = await prisma.course.create({
+    const curso = await prisma.curso.create({
       data: {
-        title: courseData.title,
-        description: courseData.description,
-        type: courseData.type,
-        category: courseData.category,
-        difficulty: courseData.difficulty,
-        price: courseData.price,
-        createdById: req.user.id,
-        modules: {
-          create: courseData.modules.map((module, index) => ({
-            title: module.title,
-            content: module.content,
-            order: index + 1,
-          })),
-        },
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        descripcion: courseData.descripcion,
+        contenidos: courseData.contenidos,
+        requerimientos: courseData.requerimientos,
+        duracion: courseData.duracion,
+        precio: courseData.precio,
+        modalidad: courseData.modalidad,
       },
     });
 
     res.status(201).json({
-      id: course.id,
-      title: course.title,
+      idCurso: curso.idCurso,
+      descripcion: curso.descripcion,
       status: 'active',
     });
   } catch (error) {
-    res.status(500).json({ error: 'Error creating course' });
+    res.status(500).json({ error: 'Error al crear curso' });
   }
 };
 
 export const registerForCourse = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'No autenticado' });
       return;
     }
 
-    const { id } = req.params;
-    const { payment_method } = req.body;
+    const id = Number(req.params.id);
 
     // Check if course exists
-    const course = await prisma.course.findUnique({
-      where: { id: Number(id) },
+    const course = await prisma.curso.findUnique({
+      where: { idCurso: id },
     });
 
     if (!course) {
-      res.status(404).json({ error: 'Course not found' });
+      res.status(404).json({ error: 'Curso no encontrado' });
       return;
     }
 
     // Check if already enrolled
-    const existingEnrollment = await prisma.courseEnrollment.findUnique({
+    const existingEnrollment = await prisma.asistenciaCurso.findFirst({
       where: {
-        userId_courseId: {
-          userId: req.user.id,
-          courseId: Number(id),
-        },
+        idAlumno: req.user.idUsuario,
+        idCronograma: id,
       },
     });
 
     if (existingEnrollment) {
-      res.status(400).json({ error: 'Already enrolled in this course' });
+      res.status(400).json({ error: 'Ya está inscrito en este curso' });
       return;
     }
 
     // Create enrollment
-    const enrollment = await prisma.courseEnrollment.create({
+    const enrollment = await prisma.asistenciaCurso.create({
       data: {
-        userId: req.user.id,
-        courseId: Number(id),
-        paymentMethod: payment_method,
+        idAlumno: req.user.idUsuario,
+        idCronograma: id,
       },
     });
 
     res.json({
       status: 'success',
-      course_id: enrollment.courseId,
-      user_id: enrollment.userId,
+      course_id: enrollment.idCronograma,
+      user_id: enrollment.idAlumno,
     });
   } catch (error) {
-    res.status(500).json({ error: 'Error registering for course' });
+    res.status(500).json({ error: 'Error al registrarse para el curso' });
   }
 };
 
 export const unregisterFromCourse = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'No autenticado' });
       return;
     }
 
-    const { id } = req.params;
+    const id = Number(req.params.id);
 
     // Check if enrolled
-    const enrollment = await prisma.courseEnrollment.findUnique({
+    const enrollment = await prisma.asistenciaCurso.findFirst({
       where: {
-        userId_courseId: {
-          userId: req.user.id,
-          courseId: Number(id),
-        },
+        idAlumno: req.user.idUsuario,
+        idCronograma: id,
       },
     });
 
     if (!enrollment) {
-      res.status(404).json({ error: 'Not enrolled in this course' });
+      res.status(404).json({ error: 'No está inscrito en este curso' });
       return;
     }
 
     // Delete enrollment
-    await prisma.courseEnrollment.delete({
+    await prisma.asistenciaCurso.delete({
       where: {
-        id: enrollment.id,
+        idAsistencia: enrollment.idAsistencia,
       },
     });
 
-    res.json({ message: 'Successfully unregistered from course' });
+    res.json({ message: 'Se ha desregistrado correctamente del curso' });
   } catch (error) {
-    res.status(500).json({ error: 'Error unregistering from course' });
+    res.status(500).json({ error: 'Error al desregistrarse del curso' });
   }
 }; 

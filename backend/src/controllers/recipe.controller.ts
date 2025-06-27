@@ -1,227 +1,175 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
-import { RecipeCreateInput, RecipeResponse, ReviewCreateInput } from '../types';
+import { RecipeCreateInput, ReviewCreateInput } from '../types';
 
 const prisma = new PrismaClient();
 
 interface RecipeQuery {
   limit?: string;
   offset?: string;
-  category?: string;
-  difficulty?: string;
 }
 
 export const getRecipes = async (req: AuthRequest, res: Response) => {
   try {
-    const { limit = '10', offset = '0', category, difficulty }: RecipeQuery = req.query;
+    const { limit = '10', offset = '0' }: RecipeQuery = req.query;
 
-    const where: any = {};
-    if (category) where.category = category;
-    if (difficulty) where.difficulty = difficulty;
-
-    const recipes = await prisma.recipe.findMany({
-      where,
+    const recipes = await prisma.receta.findMany({
       take: Number(limit),
       skip: Number(offset),
       include: {
-        createdBy: {
+        utilizados: {
+          include: {
+            ingrediente: true,
+            utencilio: true,
+            unidad: true
+          },
+        },
+        pasos: true,
+        calificaciones: {
           select: {
-            id: true,
-            name: true,
+            idCalificacion: true,
+            calificacion: true,
+            comentarios: true,
+            idUsuario: true,
           },
         },
-        ingredients: {
-          include: {
-            ingredient: true,
-          },
-        },
-        steps: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-        reviews: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
+      }
     });
 
     res.json(recipes);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching recipes' });
+    res.status(500).json({ error: 'Error al obtener las recetas' });
   }
 };
 
 export const getRecipe = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
 
-    const recipe = await prisma.recipe.findUnique({
-      where: { id: Number(id) },
+    const recipe = await prisma.receta.findUnique({
+      where: { idReceta: id },
       include: {
-        createdBy: {
+        utilizados: {
+          include: {
+            ingrediente: true,
+            utencilio: true,
+            unidad: true
+          },
+        },
+        pasos: true,
+        calificaciones: {
           select: {
-            id: true,
-            name: true,
+            idCalificacion: true,
+            calificacion: true,
+            comentarios: true,
+            idUsuario: true,
           },
         },
-        ingredients: {
-          include: {
-            ingredient: true,
-          },
-        },
-        steps: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-        reviews: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
+      }
     });
 
     if (!recipe) {
-      res.status(404).json({ error: 'Recipe not found' });
+      res.status(404).json({ error: 'Receta no encontrada' });
       return;
     }
 
     res.json(recipe);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching recipe' });
+    res.status(500).json({ error: 'Error al obtener la receta' });
   }
 };
 
 export const createRecipe = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'No autenticado' });
       return;
     }
 
     const recipeData: RecipeCreateInput = req.body;
 
-    const recipe = await prisma.recipe.create({
+    const receta = await prisma.receta.create({
       data: {
-        title: recipeData.title,
-        description: recipeData.description,
-        category: recipeData.category,
-        difficulty: recipeData.difficulty,
-        createdById: req.user.id,
-        ingredients: {
-          create: recipeData.ingredients.map((ing) => ({
-            quantity: ing.amount,
-            ingredient: {
+        nombreReceta: recipeData.nombreReceta,
+        descripcionReceta: recipeData.descripcionReceta,
+        porciones: recipeData.porciones,
+        cantidadPersonas: recipeData.cantidadPersonas,
+        utilizados: {
+          create: recipeData.ingredientes.map((ing) => ({
+            cantidad: ing.cantidad,
+            ingrediente: {
               connectOrCreate: {
                 where: {
-                  name: ing.name,
+                  nombre: ing.nombre,
                 },
                 create: {
-                  name: ing.name,
-                  unit: ing.unit,
-                  defaultQuantity: ing.amount,
+                  nombre: ing.nombre,
                 },
               },
             },
           })),
         },
-        steps: {
-          create: recipeData.steps.map((step, index) => ({
-            content: step.content,
-            order: index + 1,
+        pasos: {
+          create: recipeData.pasos.map((step) => ({
+            texto: step.texto,
+            nroPaso: step.nroPaso,
           })),
         },
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        idUsuario: req.user.idUsuario,
       },
     });
 
     res.status(201).json({
-      id: recipe.id,
-      title: recipe.title,
+      idReceta: receta.idReceta,
+      nombreReceta: receta.nombreReceta,
       status: 'active',
     });
   } catch (error) {
-    res.status(500).json({ error: 'Error creating recipe' });
+    res.status(500).json({ error: 'Error al crear la receta' });
   }
 };
 
 export const addReview = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
+      res.status(401).json({ error: 'No autenticado' });
       return;
     }
 
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const reviewData: ReviewCreateInput = req.body;
 
-    if (reviewData.rating < 1 || reviewData.rating > 5) {
-      res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    if (!reviewData.calificacion || reviewData.calificacion < 1 || reviewData.calificacion > 5) {
+      res.status(400).json({ error: 'La calificación debe estar entre 1 y 5' });
       return;
     }
 
-    const recipe = await prisma.recipe.findUnique({
-      where: { id: Number(id) },
+    const recipe = await prisma.receta.findUnique({
+      where: { idReceta: id },
     });
 
     if (!recipe) {
-      res.status(404).json({ error: 'Recipe not found' });
+      res.status(404).json({ error: 'Receta no encontrada' });
       return;
     }
 
-    const review = await prisma.review.create({
+    const review = await prisma.calificacion.create({
       data: {
-        rating: reviewData.rating,
-        comment: reviewData.comment,
-        userId: req.user.id,
-        recipeId: Number(id),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        calificacion: reviewData.calificacion,
+        comentarios: reviewData.comentarios,
+        idUsuario: req.user.idUsuario,
+        idReceta: id,
       },
     });
 
-    // Update recipe rating
-    const reviews = await prisma.review.findMany({
-      where: { recipeId: Number(id) },
-    });
-
-    const averageRating = reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length;
-
-    await prisma.recipe.update({
-      where: { id: Number(id) },
-      data: { rating: averageRating },
-    });
+    // Update recipe average rating (if you want to store it, add a field in Receta)
+    // const reviews = await prisma.calificacion.findMany({ where: { idReceta: id } });
+    // const averageRating = reviews.reduce((acc, curr) => acc + (curr.calificacion || 0), 0) / reviews.length;
+    // await prisma.receta.update({ where: { idReceta: id }, data: { averageRating } });
 
     res.status(201).json(review);
   } catch (error) {
-    res.status(500).json({ error: 'Error adding review' });
+    res.status(500).json({ error: 'Error al agregar la reseña' });
   }
 }; 

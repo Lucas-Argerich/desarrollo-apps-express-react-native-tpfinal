@@ -15,13 +15,13 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
-      id: string;
+      id: number;
       email: string;
-      userType: string;
     };
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+    const user = await prisma.usuario.findUnique({
+      where: { idUsuario: decoded.id },
+      include: { alumno: true }
     });
 
     if (!user) {
@@ -29,11 +29,12 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
       return;
     }
 
+    const { alumno, ...userData } = user;
+
     req.user = {
-      id: user.id,
-      email: user.email,
-      userType: user.userType,
-    };
+      ...userData,
+      rol: alumno ? 'alumno' : 'profesor',
+    }
 
     return next();
   } catch (error) {
@@ -49,7 +50,7 @@ export const requireRole = (roles: string[]) => {
       return;
     }
 
-    if (!roles.includes(req.user.userType)) {
+    if (!roles.includes(req.user.rol)) {
       res.status(403).json({ error: 'Not authorized' });
       return;
     }

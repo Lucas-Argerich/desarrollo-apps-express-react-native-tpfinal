@@ -3,9 +3,14 @@ import { Request } from 'express';
 // Auth types
 export interface AuthRequest extends Request {
   user?: {
-    id: string;
-    email: string;
-    userType: 'ALUMNO' | 'INSTRUCTOR' | 'ADMIN';
+    idUsuario: number;
+    mail: string | null;
+    nickname: string;
+    habilitado: string;
+    nombre: string | null;
+    direccion: string | null;
+    avatar: string | null;
+    rol: 'alumno' | 'profesor' | 'admin';
   } | null;
   files?: {
     [fieldname: string]: Express.Multer.File[];
@@ -13,127 +18,111 @@ export interface AuthRequest extends Request {
 }
 
 export interface InitialRegisterInput {
-  username: string;
-  email: string;
-  userType: 'ALUMNO' | 'INSTRUCTOR' | 'ADMIN';
+  nickname: string;
+  mail?: string;
 }
 
 export interface CompleteRegistrationInput {
-  email: string;
-  name: string;
+  mail?: string;
+  nombre?: string;
   password: string;
-  userType: 'ALUMNO' | 'INSTRUCTOR' | 'ADMIN';
-  cardNumber?: string;
-  cardExpiry?: string;
-  cardCVV?: string;
-  tramiteNumber?: string;
+  numeroTarjeta?: string;
+  vencimientoTarjeta?: string;
+  CVVTarjeta?: string;
+  numeroTramite?: string;
 }
 
 export interface LoginInput {
-  email: string;
+  mail?: string;
   password: string;
 }
 
 export interface UpdateUserInput {
-  name?: string;
-  email?: string;
+  nombre?: string;
+  mail?: string;
   password?: string;
+  direccion?: string;
+  avatar?: string;
 }
 
 export interface RequestPasswordResetInput {
-  email: string;
+  mail?: string;
 }
 
 export interface VerifyResetTokenInput {
-  email: string;
+  mail?: string;
   token: string;
 }
 
 export interface ResetPasswordInput {
-  email: string;
+  mail?: string;
   token: string;
   newPassword: string;
 }
 
 // Recipe types
 export interface RecipeCreateInput {
-  title: string;
-  description: string;
-  category: string;
-  difficulty: string;
-  time: number;
-  servings: number;
-  ingredients: IngredientCreateInput[];
-  steps: { content: string; order: number }[];
-  utensils: UtensilCreateInput[];
+  nombreReceta?: string;
+  descripcionReceta?: string;
+  fotoPrincipal?: string;
+  porciones?: number;
+  cantidadPersonas?: number;
+  idTipo?: number;
+  ingredientes: IngredientCreateInput[];
+  pasos: PasoCreateInput[];
 }
 
 export interface RecipeResponse {
-  id: number;
-  title: string;
+  idReceta: number;
+  nombreReceta?: string;
   status: string;
 }
 
 export interface IngredientCreateInput {
-  name: string;
-  amount: number;
-  unit: string;
+  nombre?: string;
+  cantidad?: number;
+  unidad?: string;
 }
 
-export interface UtensilCreateInput {
-  name: string;
-  description: string;
+export interface PasoCreateInput {
+  texto?: string;
+  nroPaso?: number;
 }
 
 // Course types
 export interface CourseCreateInput {
-  title: string;
-  description: string;
-  type: string;
-  category: string;
-  difficulty: string;
-  price: number;
-  modules: { title: string; content: string }[];
+  descripcion?: string;
+  contenidos?: string;
+  requerimientos?: string;
+  duracion?: number;
+  precio?: number;
+  modalidad: string;
 }
 
 export interface CourseResponse {
-  id: number;
-  title: string;
+  idCurso: number;
+  descripcion?: string;
   status: string;
 }
 
 // Review types
 export interface ReviewCreateInput {
-  rating: number;
-  comment: string;
+  calificacion?: number;
+  comentarios?: string;
 }
 
 export interface ReviewResponse {
-  id: number;
-  rating: number;
-  comment: string;
-  userId: string;
-  createdAt: Date;
-}
-
-// Resource types
-export interface ResourceCreateInput {
-  title: string;
-  description: string;
-  type: string;
-  url: string;
-}
-
-export interface ResourceResponse {
-  id: number;
-  title: string;
-  status: string;
+  idCalificacion: number;
+  calificacion?: number;
+  comentarios?: string;
+  idUsuario?: number;
+  createdAt?: Date;
 }
 
 // Search types
 export interface SearchQuery {
   query: string;
-  type?: 'recipe' | 'course' | 'resource';
+  type?: 'recipe' | 'course';
   limit?: string;
   offset?: string;
 }
@@ -141,5 +130,15 @@ export interface SearchQuery {
 export interface SearchResponse {
   recipes: any[];
   courses: any[];
-  resources: any[];
+}
+
+// Alumno type (if needed)
+export interface Alumno {
+  idAlumno: number;
+  numeroTarjeta?: string;
+  dniFrente?: string;
+  dniFondo?: string;
+  tramite?: string;
+  cuentaCorriente?: number;
+  idUsuario: number;
 } 

@@ -1,24 +1,9 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
-import { SearchQuery, SearchResponse, RecipeResponse, CourseResponse, ResourceResponse } from '../types';
+import { SearchQuery, SearchResponse } from '../types';
 
 const prisma = new PrismaClient();
-
-interface PrismaRecipe {
-  id: number;
-  title: string;
-}
-
-interface PrismaCourse {
-  id: number;
-  title: string;
-}
-
-interface PrismaResource {
-  id: number;
-  title: string;
-}
 
 export const search = async (req: AuthRequest, res: Response) => {
   try {
@@ -35,63 +20,44 @@ export const search = async (req: AuthRequest, res: Response) => {
     let results: SearchResponse = {
       recipes: [],
       courses: [],
-      resources: [],
     };
 
     // Search recipes
     if (!type || type === 'recipe') {
-      const recipes = await prisma.recipe.findMany({
+      const recipes = await prisma.receta.findMany({
         where: {
           OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
+            { nombreReceta: { contains: query, mode: 'insensitive' } },
+            { descripcionReceta: { contains: query, mode: 'insensitive' } },
           ],
         },
         take: searchLimit,
         skip: searchOffset,
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          reviews: true,
-        },
       });
 
-      results.recipes = recipes.map((recipe: PrismaRecipe) => ({
-        id: recipe.id,
-        title: recipe.title,
+      results.recipes = recipes.map((recipe) => ({
+        id: recipe.idReceta,
+        title: recipe.nombreReceta || '',
         status: 'active',
       }));
     }
 
     // Search courses
     if (!type || type === 'course') {
-      const courses = await prisma.course.findMany({
+      const courses = await prisma.curso.findMany({
         where: {
           OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
+            { descripcion: { contains: query, mode: 'insensitive' } },
+            { contenidos: { contains: query, mode: 'insensitive' } },
           ],
         },
         take: searchLimit,
         skip: searchOffset,
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          reviews: true,
-        },
       });
 
-      results.courses = courses.map((course: PrismaCourse) => ({
-        id: course.id,
-        title: course.title,
+      results.courses = courses.map((course) => ({
+        id: course.idCurso,
+        title: course.descripcion || '',
         status: 'active',
       }));
     }
