@@ -2,30 +2,26 @@ import React from 'react'
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Link } from 'expo-router'
+import { Receta } from '@/utils/types'
 
 interface RecipeCardProps {
-  id: string
-  title: string
-  subtitle?: string
-  time: string
-  rating: string
-  image: string
+  recipe: Receta
 }
 
-export default function RecipeCard({ id, title, subtitle, time, rating, image }: RecipeCardProps) {
+export default function RecipeCard({ recipe }: RecipeCardProps) {
   return (
-    <Link href={`/receta/${id}`} asChild>
+    <Link href={`/receta/${recipe.idReceta}`} asChild>
       <Pressable>
         <View style={styles.recipeCard}>
-          <Image source={{ uri: image }} style={styles.recipeImage} />
+          <Image source={{ uri: recipe.fotoPrincipal }} style={styles.recipeImage} />
           <View style={styles.recipeInfo}>
-            <Text style={styles.recipeTitle}>{title}</Text>
-            {subtitle ? <Text style={styles.recipeSubtitle}>{subtitle}</Text> : null}
+            <Text style={styles.recipeTitle}>{recipe.nombreReceta}</Text>
+            {recipe.descripcionReceta ? <Text style={styles.recipeSubtitle}>{recipe.descripcionReceta}</Text> : null}
             <View style={styles.recipeMeta}>
               <Ionicons name="time-outline" size={16} color="#fff" />
-              <Text style={styles.recipeMetaText}>{time}</Text>
+              <Text style={styles.recipeMetaText}>{recipe.porciones} porciones</Text>
               <Ionicons name="star" size={16} color="#FFD700" style={{ marginLeft: 8 }} />
-              <Text style={styles.recipeMetaText}>{rating}</Text>
+              <Text style={styles.recipeMetaText}>{recipe.calificaciones.length}</Text>
             </View>
           </View>
         </View>

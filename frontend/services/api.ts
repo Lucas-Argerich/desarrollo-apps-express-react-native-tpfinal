@@ -1,4 +1,4 @@
-import { authService } from "./auth"
+import { authService } from './auth'
 
 interface ReactNativeFileUpload {
   uri: string
@@ -6,11 +6,66 @@ interface ReactNativeFileUpload {
   type: string
 }
 
-export async function api(uri: string, method: string, data: { [key: string]: any }, files?: { [key: string]: ReactNativeFileUpload}) {
+// API endpoint types based on backend routes
+type AuthEndpoints = 
+  | '/auth/initial-register'
+  | '/auth/verify-registration-code'
+  | '/auth/complete-registration'
+  | '/auth/login'
+  | '/auth/request-reset'
+  | '/auth/verify-token'
+  | '/auth/reset-password'
+  | '/auth/user'
+
+type RecipeEndpoints = 
+  | '/recipes'
+  | '/recipes/:id'
+  | '/recipes/:id/reviews'
+
+type CourseEndpoints = 
+  | '/courses'
+  | '/courses/:id'
+  | '/courses/:id/register'
+
+type ResourceEndpoints = 
+  | '/resources/ingredients'
+  | '/resources/utensils'
+
+type SearchEndpoints = 
+  | '/search'
+
+type ApiEndpoints = AuthEndpoints | RecipeEndpoints | CourseEndpoints | ResourceEndpoints | SearchEndpoints
+
+type ApiMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+export async function api(
+  uri: ApiEndpoints,
+  method: ApiMethod,
+  options: {
+    params?: { [key: string]: string | number }
+    query?: { [key: string]: string }
+    data?: { [key: string]: any }
+    files?: { [key: string]: ReactNativeFileUpload }
+  } = {}
+) {
+  const { params, data, files, query } = options
+
   const token = await authService.getToken()
 
-  const preparsedUri = uri.startsWith('/') ? uri : `/${uri}`
-  const parsedUri = preparsedUri.startsWith('/api') ? preparsedUri.split('/api').at(1) : preparsedUri
+  let parsedUri = uri.startsWith('/')
+    ? uri
+    : `/${uri}`
+
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      parsedUri.replace(`:${key}`, String(value))
+    })
+  }
+
+  if (query) {
+    const queryString = new URLSearchParams(query).toString()
+    parsedUri += `?${queryString}`
+  }
 
   let payload: FormData | string
 
@@ -32,6 +87,6 @@ export async function api(uri: string, method: string, data: { [key: string]: an
       'Content-Type': files ? 'multipart/form-data' : 'application/json',
       Authorization: token ? `Bearer ${token}` : ''
     },
-    body: payload
-  })
+    body: data ? payload : undefined
+  }).then((res) => res.json())
 }

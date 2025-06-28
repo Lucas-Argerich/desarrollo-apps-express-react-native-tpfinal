@@ -1,4 +1,3 @@
-import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -11,27 +10,8 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import CustomScreenView from '@/components/CustomScreenView'
-import RecipeCard from '@/components/RecipeCard'
+import RecetasList from '@/components/sections/RecetasList'
 
-const recipeTabs = ['Recomendados', 'Mas Vistos', 'Ultimos']
-const recipeData = [
-  {
-    id: '1',
-    title: 'Hamburguesa Triple Completa',
-    subtitle: '',
-    time: '2h',
-    rating: '4.8',
-    image: 'https://picsum.photos/id/270/405'
-  },
-  {
-    id: '2',
-    title: 'Caketorta,',
-    subtitle: 'Tortería',
-    time: '2h',
-    rating: '4.8',
-    image: 'https://picsum.photos/id/270/405'
-  }
-]
 const courseData = [
   {
     id: '1',
@@ -52,7 +32,6 @@ const courseData = [
 ]
 
 export default function InicioScreen() {
-  const [activeTab, setActiveTab] = useState(0)
   return (
     <CustomScreenView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -77,42 +56,8 @@ export default function InicioScreen() {
           <Ionicons name="options-outline" size={22} color="#B0B0B0" />
         </View>
         {/* Recetas Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Explorá Recetas</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeMore}>Ver mas</Text>
-          </TouchableOpacity>
-        </View>
-        {/* Tabs */}
-        <View style={styles.tabsRow}>
-          {recipeTabs.map((tab, idx) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tabButton, activeTab === idx && styles.tabButtonActive]}
-              onPress={() => setActiveTab(idx)}
-            >
-              <Text style={[styles.tabText, activeTab === idx && styles.tabTextActive]}>{tab}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {/* Recipes Horizontal Scroll */}
-        <FlatList
-          data={recipeData}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
-          renderItem={({ item }) => (
-            <RecipeCard
-              id={item.id}
-              title={item.title}
-              subtitle={item.subtitle}
-              time={item.time}
-              rating={item.rating}
-              image={item.image}
-            />
-          )}
-        />
+        <RecetasList />
+        
         {/* Cursos Destacados Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Cursos Destacados</Text>
