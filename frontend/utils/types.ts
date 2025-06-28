@@ -49,4 +49,9 @@ export interface Receta {
   utilizados: Utilizado[];
   pasos: Paso[];
   calificaciones: Calificacion[];
+  usuario: {
+    nombre: string;
+    nickname: string;
+    mail: string;
+  }
 }

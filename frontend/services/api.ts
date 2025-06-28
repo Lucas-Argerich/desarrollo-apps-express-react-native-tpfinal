@@ -58,9 +58,11 @@ export async function api(
 
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
-      parsedUri.replace(`:${key}`, String(value))
+      parsedUri = parsedUri.replace(`:${key}`, String(value))
     })
   }
+
+  console.log('Requesting API:', method, parsedUri)
 
   if (query) {
     const queryString = new URLSearchParams(query).toString()
@@ -81,12 +83,12 @@ export async function api(
     payload = JSON.stringify(data)
   }
 
-  return fetch(`${process.env.EXPO_PUBLIC_API_URL}${parsedUri}`, {
+  return await fetch(`${process.env.EXPO_PUBLIC_API_URL}${parsedUri}`, {
     method,
     headers: {
       'Content-Type': files ? 'multipart/form-data' : 'application/json',
       Authorization: token ? `Bearer ${token}` : ''
     },
     body: data ? payload : undefined
-  }).then((res) => res.json())
+  })
 }

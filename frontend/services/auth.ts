@@ -30,8 +30,8 @@ export interface User {
 export const authService = {
   async login(mail: string, password: string): Promise<User> {
     try {
-      const response = await api('/auth/login', 'POST', { mail, password })
-      
+      const response = await api('/auth/login', 'POST', { data: { mail, password }})
+
       if (response.status === 403) {
         throw new Error('Usuario no verificado')
       }
@@ -63,7 +63,7 @@ export const authService = {
     mail: string,
   ): Promise<void> {
     
-    const response = await api('/auth/initial-register', 'POST', { nickname, mail })
+    const response = await api('/auth/initial-register', 'POST', { data: { nickname, mail }})
 
     if (!response.ok) {
       const error = await response.json()
@@ -72,7 +72,7 @@ export const authService = {
   },
 
   async verifyRegistrationCode(mail: string, code: string): Promise<void> {
-    const response = await api('/auth/verify-registration-code', 'POST', { mail, code })
+    const response = await api('/auth/verify-registration-code', 'POST', { data: { mail, code }})
 
     if (!response.ok) {
       const error = await response.json()
@@ -101,11 +101,11 @@ export const authService = {
         }
       : undefined
 
-    const response = await api('/auth/complete-registration', 'POST', 
-      { 
-        mail, 
-        nombre, 
-        password, 
+    const response = await api('/auth/complete-registration', 'POST', {
+      data: {
+        mail,
+        nombre,
+        password,
         ...(studentData && {
           numeroTarjeta: studentData.numeroTarjeta,
           vencimientoTarjeta: studentData.vencimientoTarjeta,
@@ -114,7 +114,7 @@ export const authService = {
         })
       },
       files
-    )
+    })
 
     if (!response.ok) {
       const error = await response.json()
@@ -143,7 +143,7 @@ export const authService = {
   },
 
   async requestPasswordReset(mail: string): Promise<void> {
-    const response = await api('/auth/request-reset', 'POST', { mail })
+    const response = await api('/auth/request-reset', 'POST', { data: { mail }})
 
     if (!response.ok) {
       const error = await response.json()
@@ -152,7 +152,7 @@ export const authService = {
   },
 
   async verifyResetToken(mail: string, token: string): Promise<void> {
-    const response = await api('/auth/verify-token', 'POST', { mail, token })
+    const response = await api('/auth/verify-token', 'POST', { data: { mail, token }})
 
     if (!response.ok) {
       const error = await response.json()
@@ -161,7 +161,7 @@ export const authService = {
   },
 
   async resetPassword(mail: string, token: string, newPassword: string): Promise<void> {
-    const response = await api('/auth/reset-password', 'POST', { mail, token, newPassword })
+    const response = await api('/auth/reset-password', 'POST', { data: { mail, token, newPassword }})
 
     if (!response.ok) {
       const error = await response.json()

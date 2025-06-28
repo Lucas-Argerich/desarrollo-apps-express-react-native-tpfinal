@@ -57,6 +57,13 @@ export const getRecipe = async (req: AuthRequest, res: Response) => {
             unidad: true
           },
         },
+        usuario: {
+          select: {
+            nombre: true,
+            nickname: true,
+            mail: true,
+          }
+        },
         pasos: true,
         calificaciones: {
           select: {

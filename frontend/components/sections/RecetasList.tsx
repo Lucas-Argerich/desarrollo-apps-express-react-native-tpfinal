@@ -11,10 +11,9 @@ export default function RecetasList() {
   const [recipes, setRecipes] = useState<Receta[]>([])
 
   useEffect(() => {
-    api('/recipes', 'GET', {}).then((data) => {
-      console.log(data)
-      setRecipes(data)
-    })
+    api('/recipes', 'GET', {})
+      .then((res) => res.json())
+      .then((data) => setRecipes(data))
   }, [])
 
   return (
@@ -44,11 +43,7 @@ export default function RecetasList() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
-        renderItem={({ item }) => (
-          <RecipeCard
-            recipe={item}
-          />
-        )}
+        renderItem={({ item }) => <RecipeCard recipe={item} />}
       />
     </>
   )
@@ -62,7 +57,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 16
   },
-  sectionTitle: { 
+  sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold'
   },
