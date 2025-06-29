@@ -97,6 +97,9 @@ export interface CourseCreateInput {
   duracion?: number;
   precio?: number;
   modalidad: string;
+  titulo?: string;
+  dificultad?: string;
+  imagen?: string;
 }
 
 export interface CourseResponse {

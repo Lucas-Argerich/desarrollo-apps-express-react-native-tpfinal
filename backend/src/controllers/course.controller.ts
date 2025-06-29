@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
 import { CourseCreateInput, CourseResponse } from '../types';
 
@@ -17,9 +17,12 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
     const cursos = await prisma.curso.findMany({
       take: Number(limit),
       skip: Number(offset),
+      include: {
+        cursoExtra: true,
+      }
     });
 
-    res.json(cursos);
+    res.json(cursos.map(courseParse));
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener cursos' });
   }
@@ -31,6 +34,9 @@ export const getCourse = async (req: AuthRequest, res: Response) => {
 
     const curso = await prisma.curso.findUnique({
       where: { idCurso: id },
+      include: {
+        cursoExtra: true
+      }
     });
 
     if (!curso) {
@@ -38,7 +44,7 @@ export const getCourse = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    res.json(curso);
+    res.json(courseParse(curso));
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener curso' });
   }
@@ -61,6 +67,13 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
         duracion: courseData.duracion,
         precio: courseData.precio,
         modalidad: courseData.modalidad,
+        cursoExtra: {
+          create: {
+            titulo: courseData.titulo,
+            imagen: courseData.imagen,
+            dificultad: courseData.dificultad
+          }
+        }
       },
     });
 
@@ -158,3 +171,22 @@ export const unregisterFromCourse = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Error al desregistrarse del curso' });
   }
 }; 
+
+const courseParse = (
+  course: Prisma.CursoGetPayload<{
+    include: { cursoExtra: true }
+  }>
+) => {
+  return {
+    idCurso: course.idCurso,
+    descripcion: course.descripcion,
+    contenidos: course.contenidos,
+    requerimientos: course.requerimientos,
+    duracion: course.duracion,
+    precio: course.precio,
+    modalidad: course.modalidad,
+    titulo: course.cursoExtra?.titulo || null,
+    dificultad: course.cursoExtra?.dificultad || null,
+    imagen: course.cursoExtra?.imagen || null,
+  }
+}
