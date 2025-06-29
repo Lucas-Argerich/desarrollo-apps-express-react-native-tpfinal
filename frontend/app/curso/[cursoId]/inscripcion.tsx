@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomScreenView from '@/components/CustomScreenView';
+import { useLocalSearchParams } from 'expo-router';
+import { api } from '@/services/api';
+import { Curso } from '@/utils/types';
 
 type CourseType = 'virtual' | 'online' | 'presencial';
 
@@ -42,7 +45,22 @@ const relatedCourses = [
 ];
 
 export default function CursoInscripcionScreen() {
+  const { cursoId } = useLocalSearchParams();
+  const [course, setCourse] = useState<Curso | null>(null);
+  const [loading, setLoading] = useState(true);
   const [type] = useState<CourseType>('virtual');
+
+  useEffect(() => {
+    if (cursoId && typeof cursoId === 'string') {
+      api('/courses/:id', 'GET', { params: { id: cursoId } })
+        .then(async (res) => {
+          const data = await res.json();
+          setCourse(data);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    }
+  }, [cursoId]);
 
   const getCourseDescription = () => {
     switch (type) {
@@ -70,11 +88,14 @@ export default function CursoInscripcionScreen() {
     }
   };
 
+  if (loading) return <CustomScreenView style={styles.container}><Text>Cargando...</Text></CustomScreenView>
+  if (!course) return <CustomScreenView style={styles.container}><Text>No se encontró el curso</Text></CustomScreenView>
+
   return (
     <CustomScreenView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Course Image */}
-        <Image source={{ uri: 'https://picsum.photos/462/462' }} style={styles.courseImage} />
+        <Image source={{ uri: course.imagen ?? '' }} style={styles.courseImage} />
 
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
@@ -119,7 +140,7 @@ export default function CursoInscripcionScreen() {
 
         {/* Description */}
         <Text style={styles.description}>
-          Aprende desde cero las técnicas esenciales de la panadería artesanal. Descubre cómo hacer panes crujientes, esponjosos y llenos de sabor utilizando ingredientes naturales y procesos tradicionales.
+          {course.descripcion}
         </Text>
 
         {/* Content Section */}

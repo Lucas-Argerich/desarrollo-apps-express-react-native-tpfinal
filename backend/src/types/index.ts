@@ -100,6 +100,15 @@ export interface CourseCreateInput {
   titulo?: string;
   dificultad?: string;
   imagen?: string;
+  modulos?: ModuleCreateInput[];
+}
+
+export interface ModuleCreateInput {
+  titulo: string;
+  orden: number;
+  contenido?: string;
+  duracion?: number;
+  video?: string;
 }
 
 export interface CourseResponse {

@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
-import { CourseCreateInput, CourseResponse } from '../types';
+import { CourseCreateInput } from '../types';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +19,16 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
       skip: Number(offset),
       include: {
         cursoExtra: true,
+        cronogramas: {
+          include: {
+            asistencias: {
+              include: {
+                alumno: true
+              },
+              distinct: ['idAlumno']
+            }
+          }
+        }
       }
     });
 
@@ -30,25 +40,36 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
 
 export const getCourse = async (req: AuthRequest, res: Response) => {
   try {
-    const id = Number(req.params.id);
+    const id = Number(req.params.id)
 
-    const curso = await prisma.curso.findUnique({
-      where: { idCurso: id },
-      include: {
-        cursoExtra: true
-      }
-    });
+    const data = await prisma.curso.findUnique({
+        where: { idCurso: id },
+        include: {
+          cursoExtra: true,
+          modulos: true,
+          cronogramas: {
+            include: {
+              asistencias: {
+                include: {
+                  alumno: true
+                },
+                distinct: ['idAlumno']
+              }
+            }
+          }
+        }
+      })
 
-    if (!curso) {
-      res.status(404).json({ error: 'Curso no encontrado' });
-      return;
+    if (!data) {
+      res.status(404).json({ error: 'Curso no encontrado' })
+      return
     }
 
-    res.json(courseParse(curso));
+    res.json(courseParse(data))
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener curso' });
+    res.status(500).json({ error: 'Error al obtener curso' })
   }
-};
+}
 
 export const createCourse = async (req: AuthRequest, res: Response) => {
   try {
@@ -73,9 +94,16 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
             imagen: courseData.imagen,
             dificultad: courseData.dificultad
           }
-        }
-      },
-    });
+        },
+        modulos: courseData.modulos
+          ? {
+              createMany: {
+                data: courseData.modulos
+              }
+            }
+          : undefined
+      }
+    })
 
     res.status(201).json({
       idCurso: curso.idCurso,
@@ -173,10 +201,30 @@ export const unregisterFromCourse = async (req: AuthRequest, res: Response) => {
 }; 
 
 const courseParse = (
-  course: Prisma.CursoGetPayload<{
-    include: { cursoExtra: true }
-  }>
+  course: Partial<
+    Prisma.CursoGetPayload<{
+      include: {
+        cursoExtra: true,
+        modulos: true,
+        cronogramas: {
+          include: {
+            asistencias: {
+              include: {
+                alumno: true
+              },
+              distinct: ['idAlumno']
+            }
+          }
+        }
+      }
+    }>
+  >
 ) => {
+  if (!course) return null;
+
+  const alumnos = course.cronogramas?.length ?? 0
+  const calificacion = 5
+
   return {
     idCurso: course.idCurso,
     descripcion: course.descripcion,
@@ -188,5 +236,8 @@ const courseParse = (
     titulo: course.cursoExtra?.titulo || null,
     dificultad: course.cursoExtra?.dificultad || null,
     imagen: course.cursoExtra?.imagen || null,
+    modulos: course.modulos || null,
+    alumnos,
+    calificacion
   }
 }

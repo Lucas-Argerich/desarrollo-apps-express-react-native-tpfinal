@@ -1,22 +1,43 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import CustomScreenView from '@/components/CustomScreenView';
+import { api } from '@/services/api';
 
 export default function CursoModuloScreen() {
+  const { cursoId, moduloId } = useLocalSearchParams();
+  const [modulo, setModulo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (cursoId && moduloId && typeof cursoId === 'string') {
+      api('/courses/:id', 'GET', { params: { id: cursoId } })
+        .then(async (res) => {
+          const data = await res.json();
+          const found = data.modulos?.find((m: any) => m.idModulo === moduloId);
+          setModulo(found);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    }
+  }, [cursoId, moduloId]);
+
+  if (loading) return <CustomScreenView style={styles.container}><Text>Cargando...</Text></CustomScreenView>;
+  if (!modulo) return <CustomScreenView style={styles.container}><Text>No se encontró el módulo</Text></CustomScreenView>;
+
   return (
     <CustomScreenView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Module Image */}
-        <Image source={{ uri: 'https://picsum.photos/205' }} style={styles.moduleImage} />
+        <Image source={{ uri: modulo.imagen }} style={styles.moduleImage} />
 
         {/* Module Title */}
         <View style={styles.titleContainer}>
-          <Text style={styles.moduleTitle}>1 - Introducción a la panadería artesanal</Text>
+          <Text style={styles.moduleTitle}>{modulo.titulo}</Text>
         </View>
 
         {/* Duration */}
-        <Text style={styles.duration}>Duración estimada: 45 minutos</Text>
+        <Text style={styles.duration}>Duración estimada: {modulo.duracion} minutos</Text>
 
         {/* Quote */}
         <Text style={styles.quote}>

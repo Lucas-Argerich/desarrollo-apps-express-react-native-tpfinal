@@ -1,8 +1,8 @@
 import { Curso } from '@/utils/types'
 import { Ionicons } from '@expo/vector-icons'
 import { Link } from 'expo-router'
-import React from 'react'
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native'
+import { BlurView } from 'expo-blur'
 
 interface CourseCardProps {
   item: Curso
@@ -12,17 +12,23 @@ export default function CourseCard({ item: course }: CourseCardProps) {
   return (
     <Link href={`/curso/${course.idCurso}`} asChild>
       <Pressable>
-        <View style={styles.courseCard}>
-          <Image source={{ uri: course.imagen ?? '' }} style={styles.courseImage} />
-          <View style={styles.courseInfo}>
-            <Text style={styles.courseTitle}>{course.titulo}</Text>
-            <Text style={styles.courseLevel}>{course.dificultad}</Text>
-            <View style={styles.courseMeta}>
-              <Ionicons name="people-outline" size={14} color="#fff" />
-              <Text style={styles.courseMetaText}>{/*course.students*/23}</Text>
-              <Ionicons name="star" size={14} color="#FFD700" style={{ marginLeft: 8 }} />
-              <Text style={styles.courseMetaText}>{/*course.rating*/4.2}</Text>
-            </View>
+        <View style={styles.card}>
+          <Image source={{ uri: course.imagen ?? '' }} style={styles.img} />
+          <View style={styles.cardOverlay}>
+            <BlurView style={styles.cardtextBox} intensity={20}>
+              <Text style={styles.cardTitle}>{course.titulo}</Text>
+              <Text style={styles.cardLevel}>{course.dificultad}</Text>
+              <View style={styles.cardStatsRow}>
+                <View style={styles.cardStat}>
+                  <Text style={styles.cardStatText}>{course.alumnos}</Text>
+                  <Ionicons name="people-outline" size={14} color="#fff" />
+                </View>
+                <View style={styles.cardStat}>
+                  <Text style={styles.cardStatText}>{course.calificacion}</Text>
+                  <Ionicons name="star" size={14} color="#fff" style={{ marginBottom: 2 }} />
+                </View>
+              </View>
+            </BlurView>
           </View>
         </View>
       </Pressable>
@@ -31,44 +37,72 @@ export default function CourseCard({ item: course }: CourseCardProps) {
 }
 
 const styles = StyleSheet.create({
-  courseCard: {
-    width: 220,
-    height: 120,
-    backgroundColor: '#222',
-    borderRadius: 16,
+  card: {
+    width: 317,
+    height: 211,
+    borderRadius: 30,
     marginRight: 16,
     overflow: 'hidden',
-    flexDirection: 'row'
+    position: 'relative',
+    backgroundColor: '#1D1D1D',
   },
-  courseImage: {
-    width: 100,
-    height: '100%',
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16
+  img: {
+    width: 317,
+    height: 211,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    borderRadius: 30,
   },
-  courseInfo: {
+  cardOverlay: {
     flex: 1,
-    padding: 14,
-    justifyContent: 'center'
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
+    height: 211,
+    padding: 15,
+    borderRadius: 30,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
-  courseTitle: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 2
+  cardtextBox: {
+    width: 224,
+    height: 75,
+    backgroundColor: 'rgba(29,29,29,0.6)',
+    borderRadius: 15,
+    overflow: 'hidden',
+    padding: 11,
+    gap: 4,
   },
-  courseLevel: {
+  cardTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  cardLevel: {
     color: '#CAC8C8',
-    fontSize: 13,
-    marginBottom: 8
+    fontSize: 10,
+    fontFamily: 'Roboto',
+    fontWeight: '500',
+    marginBottom: 4,
   },
-  courseMeta: {
+  cardStatsRow: {
     flexDirection: 'row',
-    alignItems: 'center'
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 22,
   },
-  courseMetaText: {
-    color: '#fff',
-    marginLeft: 4,
-    fontSize: 13
-  }
+  cardStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  cardStatText: {
+    color: '#CAC8C8',
+    fontSize: 14,
+    fontFamily: 'Roboto',
+  },
 })

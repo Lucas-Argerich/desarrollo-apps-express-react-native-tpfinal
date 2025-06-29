@@ -68,4 +68,16 @@ export interface Curso {
   titulo: string | null;
   dificultad: string | null;
   imagen: string | null;
+  alumnos?: number;
+  calificacion?: number;
+  modulos?: Modulo[];
+}
+
+export interface Modulo {
+  idModulo: number;
+  titulo: string;
+  orden: number;
+  contenido?: string | null;
+  duracion?: number | null;
+  video?: string | null;
 }

@@ -1,46 +1,51 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
-import CustomScreenView from '@/components/CustomScreenView';
-
-const modules = [
-  'Introducción a la panadería artesanal',
-  'Manejo de masas y fermentación',
-  'Técnicas de amasado y formado',
-  'Elaboración de panes clásicos',
-  'Panes especiales y de masa madre',
-  'Horneado y presentación final',
-];
+import React, { useEffect, useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native'
+import { router, useLocalSearchParams } from 'expo-router'
+import CustomScreenView from '@/components/CustomScreenView'
+import { api } from '@/services/api'
+import { Curso } from '@/utils/types'
 
 export default function CursoContenidoScreen() {
+  const { cursoId } = useLocalSearchParams()
+  const [course, setCourse] = useState<Curso | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (cursoId && typeof cursoId === 'string') {
+      api('/courses/:id', 'GET', { params: { id: cursoId } })
+        .then(async (res) => {
+          const data = await res.json()
+          setCourse(data)
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+    }
+  }, [cursoId])
+
+  if (loading) return <CustomScreenView style={styles.container}><Text>Cargando...</Text></CustomScreenView>
+  if (!course) return <CustomScreenView style={styles.container}><Text>No se encontró el curso</Text></CustomScreenView>
+
   return (
     <CustomScreenView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Course Image */}
-        <Image source={{ uri: 'https://picsum.photos/210/210' }} style={styles.courseImage} />
-
-        {/* Content Section */}
+        <Image source={{ uri: course.imagen ?? '' }} style={styles.courseImage} />
         <Text style={styles.sectionTitle}>Contenido</Text>
-        <Text style={styles.contentDescription}>
-          Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede a material digital.
-        </Text>
-
-        {/* Course Modules */}
+        <Text style={styles.contentDescription}>{course.descripcion}</Text>
         <View style={styles.modulesContainer}>
-          {modules.map((module, index) => (
-            <TouchableOpacity 
-              key={index} 
+          {course.modulos?.map((modulo, index) => (
+            <TouchableOpacity
+              key={index}
               style={styles.moduleItem}
-              onPress={() => router.push('/curso/1/modulo/1')}
+              onPress={() => router.push(`/curso/${cursoId}/modulo/${modulo.idModulo}`)}
             >
               <Text style={styles.moduleNumber}>{index + 1}.</Text>
-              <Text style={styles.moduleTitle}>{module}</Text>
+              <Text style={styles.moduleTitle}>{modulo.titulo}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
     </CustomScreenView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({

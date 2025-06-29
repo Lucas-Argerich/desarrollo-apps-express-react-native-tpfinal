@@ -43,7 +43,7 @@ export async function api(
   method: ApiMethod,
   options: {
     params?: { [key: string]: string | number }
-    query?: { [key: string]: string }
+    query?: { [key: string]: string | number }
     data?: { [key: string]: any }
     files?: { [key: string]: ReactNativeFileUpload }
   } = {}
@@ -61,13 +61,16 @@ export async function api(
       parsedUri = parsedUri.replace(`:${key}`, String(value))
     })
   }
+  
+  if (query) {
+    const searchParams = new URLSearchParams() 
+    Object.entries(query).forEach(([key, value]) => {
+      searchParams.append(key, String(value))
+    })
+    parsedUri += `?${searchParams.toString()}`
+  }
 
   console.log('Requesting API:', method, parsedUri)
-
-  if (query) {
-    const queryString = new URLSearchParams(query).toString()
-    parsedUri += `?${queryString}`
-  }
 
   let payload: FormData | string
 

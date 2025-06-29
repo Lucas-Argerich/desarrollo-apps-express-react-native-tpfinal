@@ -157,6 +157,7 @@ model Curso {
   modalidad      String            @db.VarChar(20)
   cronogramas    CronogramaCurso[]
   cursoExtra     CursoExtra?
+  modulos        Modulo[]
 }
 
 model CursoExtra {
@@ -165,6 +166,17 @@ model CursoExtra {
   titulo     String?
   dificultad String?
   imagen     String?
+}
+
+model Modulo {
+  idModulo     Int     @id @default(autoincrement())
+  idCurso      Int
+  titulo       String  @db.VarChar(200)
+  orden        Int
+  contenido    String? @db.VarChar(1000)
+  duracion     Int?    // duración en minutos
+  video        String? @db.VarChar(300)
+  curso        Curso   @relation(fields: [idCurso], references: [idCurso])
 }
 
 model CronogramaCurso {
