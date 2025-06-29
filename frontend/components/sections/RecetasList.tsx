@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { api } from '@/services/api'
 import { Receta } from '@/utils/types'
 
-const recipeTabs = ['Todas', 'Dulces', 'Saladas', 'Bebidas']
+const recipeTabs = ['Recomendados', 'Mas Vistos', 'Ultimos']
 
 export default function RecetasList() {
   const [activeTab, setActiveTab] = useState(0)
@@ -55,7 +55,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginBottom: 16
+    marginBottom: 16,
+    marginTop: 24
   },
   sectionTitle: {
     fontSize: 20,

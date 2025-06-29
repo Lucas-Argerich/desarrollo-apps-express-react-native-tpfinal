@@ -1,25 +1,26 @@
-import React, { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native'
+import React, { useEffect } from 'react'
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import CustomScreenView from '@/components/CustomScreenView'
-import { useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { api } from '@/services/api'
-import { Receta } from '@/utils/types'
+import ActionButton from '@/components/ui/ActionButton'
+import Hero from '@/components/ui/Hero'
+import { useReceta } from '@/contexts/RecetaContext'
 
 export default function RecetaScreen() {
   const { recetaId: id } = useLocalSearchParams()
-  const [servings, setServings] = useState(1)
-  const [recipe, setRecipe] = useState<Receta | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { receta, setReceta, loading, setLoading, servings, setServings } = useReceta()
 
   useEffect(() => {
-    if (id) {
+    if (id && !receta) {
       const recipeId = Array.isArray(id) ? id[0] : id
 
       api('/recipes/:id', 'GET', { params: { id: recipeId } })
         .then((res) => res.json())
         .then((data) => {
-          setRecipe(data)
+          setReceta(data)
+          setServings(data.cantidadPersonas)
           setLoading(false)
         })
         .catch((error) => {
@@ -27,7 +28,7 @@ export default function RecetaScreen() {
           setLoading(false)
         })
     }
-  }, [id])
+  }, [id, receta, setReceta, setServings, setLoading])
 
   if (loading) {
     return (
@@ -39,7 +40,7 @@ export default function RecetaScreen() {
     )
   }
 
-  if (!recipe) {
+  if (!receta || typeof id !== 'string') {
     return (
       <CustomScreenView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -50,42 +51,24 @@ export default function RecetaScreen() {
   }
 
   return (
-    <CustomScreenView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <>
+      <CustomScreenView style={styles.container}>
         {/* Hero Image */}
-        <View>
-          <Image source={{ uri: recipe.fotoPrincipal }} style={styles.heroImage} />
-          <View
-            style={{
-              backgroundColor: '#acacac',
-              padding: 20,
-              display: 'flex',
-              gap: 10,
-              position: 'absolute',
-              bottom: 20,
-              width: '90%',
-              right: '50%',
-              transform: [{ translateX: '50%' }],
-              borderRadius: 15
-            }}
-          >
-            <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
-              {recipe.nombreReceta}
+        <Hero image={receta.fotoPrincipal} state="open">
+          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
+            {receta.nombreReceta}
+          </Text>
+          <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ color: '#fff', fontSize: 16 }}>
+              <Text style={{ fontSize: 12, fontStyle: 'italic' }}>De</Text> {receta.usuario.nombre}
             </Text>
-            <View
-              style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}
-            >
-              <Text style={{ color: '#fff', fontSize: 16 }}>
-                <Text style={{ fontSize: 12, fontStyle: 'italic' }}>De</Text>{' '}
-                {recipe.usuario.nombre}
-              </Text>
-              <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-                <Text style={{ color: '#fff', fontSize: 16 }}>{recipe.calificaciones.length}</Text>
-                <Ionicons name="star" size={16} color="#fff" />
-              </View>
+            <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+              <Text style={{ color: '#fff', fontSize: 16 }}>{receta.calificaciones.length}</Text>
+              <Ionicons name="star" size={16} color="#fff" />
             </View>
           </View>
-        </View>
+        </Hero>
+
         <Text style={styles.sectionTitle}>Resumen</Text>
 
         {/* Recipe Info */}
@@ -95,7 +78,7 @@ export default function RecetaScreen() {
               <View style={styles.iconContainer}>
                 <Ionicons name="time-outline" size={16} color="#7E7E7E" />
               </View>
-              <Text style={styles.infoText}>{recipe.porciones} porciones</Text>
+              <Text style={styles.infoText}>{receta.porciones} porciones</Text>
             </View>
             <View style={styles.infoItem}>
               <View style={styles.iconContainer}>
@@ -110,25 +93,25 @@ export default function RecetaScreen() {
                 <Ionicons name="person-outline" size={16} color="#7E7E7E" />
               </View>
               <Text style={styles.infoText}>
-                {recipe.cantidadPersonas} persona{recipe.cantidadPersonas > 1 ? 's' : ''}
+                {receta.cantidadPersonas} persona{receta.cantidadPersonas > 1 ? 's' : ''}
               </Text>
             </View>
             <View style={styles.infoItem}>
               <View style={styles.iconContainer}>
                 <Ionicons name="star" size={16} color="#7E7E7E" />
               </View>
-              <Text style={styles.infoText}>{recipe.calificaciones?.length}</Text>
+              <Text style={styles.infoText}>{receta.calificaciones?.length}</Text>
             </View>
           </View>
         </View>
 
         {/* Description */}
-        <Text style={styles.description}>{recipe.descripcionReceta}</Text>
+        <Text style={styles.description}>{receta.descripcionReceta}</Text>
 
         {/* Ingredients */}
         <Text style={styles.sectionTitle}>Ingredientes</Text>
         <View style={styles.ingredientsGrid}>
-          {recipe.utilizados
+          {receta.utilizados
             ?.filter((item) => item.ingrediente)
             .map((item) => (
               <View key={item.idUtilizado} style={styles.ingredientCard}>
@@ -149,7 +132,7 @@ export default function RecetaScreen() {
         {/* Ingredients */}
         <Text style={styles.sectionTitle}>Utencilios</Text>
         <View style={styles.ingredientsGrid}>
-          {recipe.utilizados
+          {receta.utilizados
             ?.filter((item) => item.utencilio)
             .map((item) => (
               <View key={item.idUtilizado} style={styles.ingredientCard}>
@@ -170,8 +153,15 @@ export default function RecetaScreen() {
         {/* Servings Counter */}
         <View style={styles.servingsContainer}>
           <TouchableOpacity
-            style={[styles.servingsButton, styles.minusButton]}
-            onPress={() => setServings(Math.max(1, servings - 1))}
+            style={[
+              styles.servingsButton,
+              styles.minusButton,
+              {
+                backgroundColor:
+                  (servings ?? 0) <= receta.cantidadPersonas ? 'rgba(238,150,75,0.4)' : '#EE964B'
+              }
+            ]}
+            onPress={() => servings && setServings(Math.max(receta.cantidadPersonas, servings - 1))}
           >
             <Ionicons name="remove" size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -181,7 +171,7 @@ export default function RecetaScreen() {
           </View>
           <TouchableOpacity
             style={[styles.servingsButton, styles.plusButton]}
-            onPress={() => setServings(servings + 1)}
+            onPress={() => servings && setServings(servings + 1)}
           >
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -189,8 +179,8 @@ export default function RecetaScreen() {
 
         {/* Reviews */}
         <Text style={styles.sectionTitle}>Opiniones</Text>
-        {recipe.calificaciones?.length > 0 ? (
-          recipe.calificaciones.map((review, index) => (
+        {receta.calificaciones?.length > 0 ? (
+          receta.calificaciones.map((review, index) => (
             <View key={index} style={styles.reviewCard}>
               <Text style={styles.reviewText}>Review {index + 1}</Text>
               <View style={styles.reviewFooter}>
@@ -210,14 +200,12 @@ export default function RecetaScreen() {
         <TouchableOpacity style={styles.viewAllButton}>
           <Text style={styles.viewAllText}>Ver todas</Text>
         </TouchableOpacity>
-      </ScrollView>
-
-      {/* Start Button */}
-      <TouchableOpacity style={styles.startButton}>
+      </CustomScreenView>
+      <ActionButton onPress={() => router.push(`/receta/${id}/pasos`)}>
         <Text style={styles.startButtonText}>Empezar</Text>
         <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-    </CustomScreenView>
+      </ActionButton>
+    </>
   )
 }
 
@@ -225,11 +213,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF'
-  },
-  heroImage: {
-    width: '100%',
-    height: 374,
-    resizeMode: 'cover'
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -349,7 +332,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   minusButton: {
-    backgroundColor: 'rgba(238,150,75,0.4)',
+    backgroundColor: '#EE964B',
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8
   },
@@ -364,6 +347,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 16,
     paddingVertical: 8,
+    height: '100%',
     borderWidth: 1,
     borderColor: '#E1E1E1'
   },

@@ -17,11 +17,15 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           <View style={styles.recipeInfo}>
             <Text style={styles.recipeTitle}>{recipe.nombreReceta}</Text>
             {recipe.descripcionReceta ? <Text style={styles.recipeSubtitle}>{recipe.descripcionReceta}</Text> : null}
-            <View style={styles.recipeMeta}>
-              <Ionicons name="time-outline" size={16} color="#fff" />
-              <Text style={styles.recipeMetaText}>{recipe.porciones} porciones</Text>
-              <Ionicons name="star" size={16} color="#FFD700" style={{ marginLeft: 8 }} />
-              <Text style={styles.recipeMetaText}>{recipe.calificaciones.length}</Text>
+            <View style={styles.recipeMetaContainer}>
+              <View style={styles.recipeMeta}>
+                <Ionicons name="time-outline" size={16} color="#fff" />
+                <Text style={styles.recipeMetaText}>{recipe.porciones} porciones</Text>
+              </View>
+              <View style={styles.recipeMeta}>
+                <Text style={styles.recipeMetaText}>{recipe.calificacion?.toFixed(1)}</Text>
+                <Ionicons name="star" size={16} color="#fff" style={{ marginLeft: 2, marginBottom: 2 }} />
+              </View>
             </View>
           </View>
         </View>
@@ -61,6 +65,11 @@ const styles = StyleSheet.create({
     color: '#CAC8C8',
     fontSize: 13,
     marginBottom: 8
+  },
+  recipeMetaContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between'
   },
   recipeMeta: {
     flexDirection: 'row',

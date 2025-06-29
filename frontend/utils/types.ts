@@ -26,11 +26,20 @@ export interface Utilizado {
   unidad: Unidad;
 }
 
+export interface Multimedia {
+  idContenido: number;
+  idPaso: number;
+  tipo_contenido: string;
+  extension: string | null;
+  urlContenido: string | null;
+}
+
 export interface Paso {
   idPaso: number;
   idReceta: number;
   nroPaso: number;
   texto: string;
+  multimedia: Multimedia[];
 }
 
 export interface Calificacion {

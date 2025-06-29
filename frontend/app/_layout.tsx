@@ -30,10 +30,8 @@ export default function Layout() {
       <Stack.Screen name="curso/[cursoId]/contenido" options={{ headerShown: false }} />
       <Stack.Screen name="curso/[cursoId]/[moduloId]" options={{ headerShown: false }} />
 
-      {/* Recipe Screens */}
-      <Stack.Screen name="receta/[recetaId]" options={{ headerShown: false }} />
-      <Stack.Screen name="receta/[recetaId]/pasos" options={{ headerShown: false }} />
-      <Stack.Screen name="receta/[recetaId]/puntuacion" options={{ headerShown: false }} />
+      {/* Recipe Screens - Now using the receta layout */}
+      <Stack.Screen name="receta" options={{ headerShown: false }} />
 
       {/* Error Screen */}
       <Stack.Screen name="+not-found" options={{ headerShown: false }} />

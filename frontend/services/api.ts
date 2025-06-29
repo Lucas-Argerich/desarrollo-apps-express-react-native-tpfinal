@@ -46,9 +46,10 @@ export async function api(
     query?: { [key: string]: string | number }
     data?: { [key: string]: any }
     files?: { [key: string]: ReactNativeFileUpload }
+    signal?: AbortSignal
   } = {}
 ) {
-  const { params, data, files, query } = options
+  const { params, data, files, query, signal } = options
 
   const token = await authService.getToken()
 
@@ -92,6 +93,7 @@ export async function api(
       'Content-Type': files ? 'multipart/form-data' : 'application/json',
       Authorization: token ? `Bearer ${token}` : ''
     },
-    body: data ? payload : undefined
+    body: data ? payload : undefined,
+    signal
   })
 }

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Text, ActivityIndicator, View, FlatList } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, TouchableOpacity, Text, ActivityIndicator, View, FlatList, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/ui/Header';
 import SearchBar from '../../components/ui/SearchBar';
-import CustomScreenView from '../../components/CustomScreenView';
 import { api } from '@/services/api';
 import { Curso, Receta } from '@/utils/types';
 import SearchResult from '@/components/SearchResult';
@@ -25,6 +25,9 @@ export default function BusquedaScreen() {
   const [results, setResults] = useState<SearchResultApi>({ recipes: [], courses: [] });
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  
+  // Ref to store the current AbortController
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const filters: FilterType[] = ['todos', 'recetas', 'cursos', 'ingredientes'];
 
@@ -34,11 +37,22 @@ export default function BusquedaScreen() {
       setSearched(false);
       return;
     }
+
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
+
     setLoading(true);
     setSearched(true);
+    
     let typeParam = undefined;
     if (activeFilter === 'recetas') typeParam = 'recipe';
     if (activeFilter === 'cursos') typeParam = 'course';
+    
     // ingredientes not supported in backend, so skip
     api('/search', 'GET', {
       query: {
@@ -46,18 +60,42 @@ export default function BusquedaScreen() {
         ...(typeParam ? { type: typeParam } : {}),
         limit: 10,
       },
+      signal: abortControllerRef.current.signal
     })
-      .then((res) => res.json())
+      .then((res) => {
+        // Check if request was aborted
+        if (abortControllerRef.current?.signal.aborted) {
+          return;
+        }
+        return res.json();
+      })
       .then((data) => {
-        console.log(data)
+        // Check if request was aborted
+        if (abortControllerRef.current?.signal.aborted) {
+          return;
+        }
+        console.log(data);
         setResults(data);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        // Don't update state if request was aborted
+        if (error.name === 'AbortError') {
+          return;
+        }
         setResults({ recipes: [], courses: [] });
         setLoading(false);
       });
   }, [searchQuery, activeFilter]);
+
+  // Cleanup function to abort any pending requests when component unmounts
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Merge and tag results
   let mixedResults: MixedResult[] = [];
@@ -72,8 +110,54 @@ export default function BusquedaScreen() {
     mixedResults = results.courses.map((c) => ({ type: 'course' as const, data: c }));
   }
 
+  const renderResults = () => {
+    if (loading) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#EE964B" />
+        </View>
+      );
+    }
+
+    if (!searched) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.placeholderText}>Buscá recetas o cursos usando la barra de búsqueda.</Text>
+        </View>
+      );
+    }
+
+    if (activeFilter === 'ingredientes') {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.placeholderText}>La búsqueda de ingredientes no está disponible.</Text>
+        </View>
+      );
+    }
+
+    if (mixedResults.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.placeholderText}>No se encontraron resultados.</Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={mixedResults}
+        keyExtractor={(_, idx) => idx.toString()}
+        numColumns={2}
+        renderItem={({ item }) => <SearchResult result={item} />}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      />
+    );
+  };
+
   return (
-    <CustomScreenView style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Header 
         title="Búsqueda"
         subtitle="Encontrá lo que buscás"
@@ -89,6 +173,7 @@ export default function BusquedaScreen() {
         horizontal 
         showsHorizontalScrollIndicator={false}
         style={styles.filterTabs}
+        contentContainerStyle={styles.filterTabsContent}
       >
         {filters.map((filter) => (
           <TouchableOpacity
@@ -110,34 +195,9 @@ export default function BusquedaScreen() {
       </ScrollView>
 
       <View style={styles.resultsContainer}>
-        {loading && (
-          <View style={{ marginTop: 32, alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#EE964B" />
-          </View>
-        )}
-        {!loading && searched && (
-          <>
-            {activeFilter === 'ingredientes' ? (
-              <Text style={{ marginTop: 32, textAlign: 'center', color: '#888' }}>La búsqueda de ingredientes no está disponible.</Text>
-            ) : mixedResults.length === 0 ? (
-              <Text style={{ marginTop: 32, textAlign: 'center', color: '#888' }}>No se encontraron resultados.</Text>
-            ) : (
-              <FlatList
-                data={mixedResults}
-                keyExtractor={(_, idx) => idx.toString()}
-                numColumns={2}
-                renderItem={({ item }) => <SearchResult result={item} />}
-                contentContainerStyle={{ paddingBottom: 32 }}
-                showsVerticalScrollIndicator={false}
-              />
-            )}
-          </>
-        )}
-        {!loading && !searched && (
-          <Text style={{ marginTop: 32, textAlign: 'center', color: '#888' }}>Buscá recetas o cursos usando la barra de búsqueda.</Text>
-        )}
+        {renderResults()}
       </View>
-    </CustomScreenView>
+    </SafeAreaView>
   );
 }
 
@@ -147,9 +207,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   filterTabs: {
-    paddingHorizontal: 16,
     marginVertical: 8,
     flexGrow: 0
+  },
+  filterTabsContent: {
+    paddingHorizontal: 16,
   },
   filterTab: {
     paddingHorizontal: 16,
@@ -172,6 +234,15 @@ const styles = StyleSheet.create({
   activeFilterText: {
     color: '#fff',
     fontWeight: '500',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#888',
+    fontSize: 16,
   },
   resultsContainer: {
     flex: 1,

@@ -15,35 +15,29 @@ import CursosList from '@/components/sections/CursosList'
 export default function InicioScreen() {
   return (
     <CustomScreenView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Bienvenido!</Text>
-            <Text style={styles.headerSubtitle}>Explorá platos y culturas</Text>
-          </View>
-          <View style={styles.profilePicWrap}>
-            <Image source={{ uri: 'https://picsum.photos/50/50' }} style={styles.profilePic} />
-            <TouchableOpacity style={styles.loginIcon}>
-              <View style={styles.loginIconBg}>
-                <Ionicons name="log-in-outline" size={16} color="#fff" />
-              </View>
-            </TouchableOpacity>
-          </View>
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Bienvenido!</Text>
+          <Text style={styles.headerSubtitle}>Explorá platos y culturas</Text>
         </View>
-        {/* Search Bar */}
-        <View style={styles.searchBar}>
-          <TextInput placeholder="Buscar recetas" style={{ flex: 1, fontSize: 16 }} />
-          <Ionicons name="options-outline" size={22} color="#B0B0B0" />
+        <View style={styles.profilePicWrap}>
+          <Image source={{ uri: 'https://picsum.photos/50/50' }} style={styles.profilePic} />
+          <TouchableOpacity style={styles.loginIcon}>
+            <View style={styles.loginIconBg}>
+              <Ionicons name="log-in-outline" size={16} color="#fff" />
+            </View>
+          </TouchableOpacity>
         </View>
-        {/* Recetas Section */}
-        <RecetasList />
-        
-        {/* Cursos Destacados Section */}
-        <CursosList />
+      </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      {/* Recetas Section */}
+      <RecetasList />
+      
+      {/* Cursos Destacados Section */}
+      <CursosList />
+
+      <View style={{ height: 100 }} />
     </CustomScreenView>
   )
 }
