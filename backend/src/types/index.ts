@@ -1,3 +1,6 @@
+import { courseParse } from '@/controllers/course.controller';
+import { recipeParse } from '@/controllers/recipe.controller';
+import { Prisma } from '@prisma/client';
 import { Request } from 'express';
 
 // Auth types
@@ -62,7 +65,7 @@ export interface ResetPasswordInput {
 
 // Recipe types
 export interface RecipeCreateInput {
-  nombreReceta?: string;
+  nombreReceta: string;
   descripcionReceta?: string;
   fotoPrincipal?: string;
   porciones?: number;
@@ -140,8 +143,8 @@ export interface SearchQuery {
 }
 
 export interface SearchResponse {
-  recipes: any[];
-  courses: any[];
+  recipes: ReturnType<typeof recipeParse>[];
+  courses: ReturnType<typeof courseParse>[];
 }
 
 // Alumno type (if needed)

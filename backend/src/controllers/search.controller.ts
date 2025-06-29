@@ -2,6 +2,8 @@ import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
 import { SearchQuery, SearchResponse } from '../types';
+import { courseParse } from './course.controller';
+import { recipeParse } from './recipe.controller';
 
 const prisma = new PrismaClient();
 
@@ -25,6 +27,13 @@ export const search = async (req: AuthRequest, res: Response) => {
     // Search recipes
     if (!type || type === 'recipe') {
       const recipes = await prisma.receta.findMany({
+        include: {
+          utilizados: true,
+          tipo: true,
+          pasos: true,
+          calificaciones: true,
+          usuario: true
+        },
         where: {
           OR: [
             { nombreReceta: { contains: query, mode: 'insensitive' } },
@@ -35,18 +44,28 @@ export const search = async (req: AuthRequest, res: Response) => {
         skip: searchOffset,
       });
 
-      results.recipes = recipes.map((recipe) => ({
-        id: recipe.idReceta,
-        title: recipe.nombreReceta || '',
-        status: 'active',
-      }));
+      results.recipes = recipes.map(recipeParse)
     }
 
     // Search courses
     if (!type || type === 'course') {
       const courses = await prisma.curso.findMany({
+        include: {
+          cursoExtra: true,
+          cronogramas: {
+            include: {
+              asistencias: {
+                include: {
+                  alumno: true
+                },
+                distinct: ['idAlumno']
+              }
+            }
+          }
+        },
         where: {
           OR: [
+            { cursoExtra: { titulo: { contains: query, mode: 'insensitive' } } },
             { descripcion: { contains: query, mode: 'insensitive' } },
             { contenidos: { contains: query, mode: 'insensitive' } },
           ],
@@ -55,11 +74,7 @@ export const search = async (req: AuthRequest, res: Response) => {
         skip: searchOffset,
       });
 
-      results.courses = courses.map((course) => ({
-        id: course.idCurso,
-        title: course.descripcion || '',
-        status: 'active',
-      }));
+      results.courses = courses.map(courseParse)
     }
 
     res.json(results);

@@ -45,8 +45,8 @@ model TipoReceta {
 
 model Receta {
   idReceta          Int            @id @default(autoincrement())
-  idUsuario         Int?
-  nombreReceta      String?        @db.VarChar(500)
+  idUsuario         Int
+  nombreReceta      String         @db.VarChar(500)
   descripcionReceta String?        @db.VarChar(1000)
   fotoPrincipal     String?        @db.VarChar(300)
   porciones         Int?
@@ -62,7 +62,7 @@ model Receta {
 
 model Ingrediente {
   idIngrediente Int         @id @default(autoincrement())
-  nombre        String?     @db.VarChar(200)
+  nombre        String      @db.VarChar(200)
   utilizados    Utilizado[]
 }
 

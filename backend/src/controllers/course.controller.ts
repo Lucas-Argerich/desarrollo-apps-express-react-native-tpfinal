@@ -200,7 +200,7 @@ export const unregisterFromCourse = async (req: AuthRequest, res: Response) => {
   }
 }; 
 
-const courseParse = (
+export const courseParse = (
   course: Partial<
     Prisma.CursoGetPayload<{
       include: {
@@ -220,8 +220,6 @@ const courseParse = (
     }>
   >
 ) => {
-  if (!course) return null;
-
   const alumnos = course.cronogramas?.length ?? 0
   const calificacion = 5
 

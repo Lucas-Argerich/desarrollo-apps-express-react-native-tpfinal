@@ -50,6 +50,10 @@ export interface Receta {
   utilizados: Utilizado[];
   pasos: Paso[];
   calificaciones: Calificacion[];
+  calificacion?: number;
+  tipo: {
+    descripcion: string;
+  };
   usuario: {
     nombre: string;
     nickname: string;

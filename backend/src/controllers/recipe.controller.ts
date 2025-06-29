@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
 import { RecipeCreateInput, ReviewCreateInput } from '../types';
 
@@ -18,26 +18,15 @@ export const getRecipes = async (req: AuthRequest, res: Response) => {
       take: Number(limit),
       skip: Number(offset),
       include: {
-        utilizados: {
-          include: {
-            ingrediente: true,
-            utencilio: true,
-            unidad: true
-          },
-        },
+        utilizados: true,
+        tipo: true,
         pasos: true,
-        calificaciones: {
-          select: {
-            idCalificacion: true,
-            calificacion: true,
-            comentarios: true,
-            idUsuario: true,
-          },
-        },
+        calificaciones: true,
+        usuario: true
       }
     });
 
-    res.json(recipes);
+    res.json(recipes.map(recipeParse));
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener las recetas' });
   }
@@ -50,29 +39,11 @@ export const getRecipe = async (req: AuthRequest, res: Response) => {
     const recipe = await prisma.receta.findUnique({
       where: { idReceta: id },
       include: {
-        utilizados: {
-          include: {
-            ingrediente: true,
-            utencilio: true,
-            unidad: true
-          },
-        },
-        usuario: {
-          select: {
-            nombre: true,
-            nickname: true,
-            mail: true,
-          }
-        },
+        utilizados: true,
+        tipo: true,
         pasos: true,
-        calificaciones: {
-          select: {
-            idCalificacion: true,
-            calificacion: true,
-            comentarios: true,
-            idUsuario: true,
-          },
-        },
+        calificaciones: true,
+        usuario: true
       }
     });
 
@@ -81,7 +52,7 @@ export const getRecipe = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    res.json(recipe);
+    res.json(recipeParse(recipe));
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener la receta' });
   }
@@ -180,3 +151,35 @@ export const addReview = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Error al agregar la reseña' });
   }
 }; 
+
+export function recipeParse(
+  recipe: Partial<
+    Prisma.RecetaGetPayload<{
+      include: {
+        utilizados: true,
+        tipo: true,
+        pasos: true,
+        calificaciones: true,
+        usuario: true
+      }
+    }>
+  >
+) {
+  return {
+    idReceta: recipe.idReceta,
+    nombreReceta: recipe.nombreReceta,
+    descripcionReceta: recipe.descripcionReceta,
+    fotoPrincipal: recipe.fotoPrincipal,
+    porciones: recipe.porciones,
+    cantidadPersonas: recipe.cantidadPersonas,
+    idTipo: recipe.idTipo,
+    utilizados: recipe.utilizados,
+    pasos: recipe.pasos,
+    calificaciones: recipe.calificaciones,
+    calificacion: recipe.calificaciones
+      ? recipe.calificaciones?.reduce((acc, curr) => acc + (curr.calificacion || 0), 0) /
+        (recipe.calificaciones?.length || 1)
+      : 0,
+    usuario: recipe.usuario
+  }
+}
