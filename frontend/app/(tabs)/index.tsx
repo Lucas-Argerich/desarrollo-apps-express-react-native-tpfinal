@@ -5,31 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  FlatList,
   ScrollView
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import CustomScreenView from '@/components/CustomScreenView'
 import RecetasList from '@/components/sections/RecetasList'
-
-const courseData = [
-  {
-    id: '1',
-    title: 'Cocina Mediterránea: Técnicas y Secretos',
-    level: 'Nivel Intermedio - $$$',
-    students: 20,
-    rating: '4.7',
-    image: 'https://picsum.photos/317/200'
-  },
-  {
-    id: '2',
-    title: 'Cocina Mediterránea: Técnicas y Secretos',
-    level: 'Nivel Intermedio - $$$',
-    students: 20,
-    rating: '4.8',
-    image: 'https://picsum.photos/317/200'
-  }
-]
+import CursosList from '@/components/sections/CursosList'
 
 export default function InicioScreen() {
   return (
@@ -59,34 +40,8 @@ export default function InicioScreen() {
         <RecetasList />
         
         {/* Cursos Destacados Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Cursos Destacados</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeMore}>Ver mas</Text>
-          </TouchableOpacity>
-        </View>
-        <FlatList
-          data={courseData}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
-          renderItem={({ item }) => (
-            <View style={styles.courseCard}>
-              <Image source={{ uri: item.image }} style={styles.courseImage} />
-              <View style={styles.courseInfo}>
-                <Text style={styles.courseTitle}>{item.title}</Text>
-                <Text style={styles.courseLevel}>{item.level}</Text>
-                <View style={styles.courseMeta}>
-                  <Ionicons name="people-outline" size={14} color="#fff" />
-                  <Text style={styles.courseMetaText}>{item.students}</Text>
-                  <Ionicons name="star" size={14} color="#FFD700" style={{ marginLeft: 8 }} />
-                  <Text style={styles.courseMetaText}>{item.rating}</Text>
-                </View>
-              </View>
-            </View>
-          )}
-        />
+        <CursosList />
+
         <View style={{ height: 100 }} />
       </ScrollView>
     </CustomScreenView>

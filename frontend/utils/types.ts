@@ -34,7 +34,8 @@ export interface Paso {
 }
 
 export interface Calificacion {
-  // Define fields if needed, left empty as per example
+  calificacion: string;
+  comentario: string | null;
 }
 
 export interface Receta {
@@ -54,4 +55,17 @@ export interface Receta {
     nickname: string;
     mail: string;
   }
+}
+
+export interface Curso {
+  idCurso: number;
+  descripcion: string | null;
+  contenidos: string | null;
+  requerimientos: string | null;
+  duracion: number | null;
+  precio: number | null;
+  modalidad: string;
+  titulo: string | null;
+  dificultad: string | null;
+  imagen: string | null;
 }
