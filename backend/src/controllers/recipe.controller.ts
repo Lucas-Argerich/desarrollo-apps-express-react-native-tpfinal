@@ -150,13 +150,13 @@ export const createRecipe = async (req: AuthRequest, res: Response) => {
       data: {
         nombreReceta: recipeData.nombreReceta,
         descripcionReceta: recipeData.descripcionReceta,
-        porciones: recipeData.porciones,
-        cantidadPersonas: recipeData.cantidadPersonas,
+        porciones: recipeData.porciones ?? 1,
+        cantidadPersonas: recipeData.cantidadPersonas ?? 1,
         fotoPrincipal: fotoPrincipalUrl,
         utilizados: {
           create: [
             ...recipeData.ingredientes.filter((f) => f.nombre !== undefined).map((ing) => ({
-              cantidad: ing.cantidad,
+              cantidad: ing.cantidad ?? 1,
               ingrediente: {
                 connectOrCreate: {
                   where: {
@@ -169,7 +169,7 @@ export const createRecipe = async (req: AuthRequest, res: Response) => {
               }
             })),
             ...recipeData.utencilios.filter((f) => f.nombre !== undefined).map((ut) => ({
-              cantiidad: ut.cantidad,
+              cantidad: ut.cantidad ?? 1,
               utencilio: {
                 connectOrCreate: {
                   where: {
