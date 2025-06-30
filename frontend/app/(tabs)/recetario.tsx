@@ -61,50 +61,56 @@ export default function RecetarioScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      let isActive = true
       setLoading(true)
       setFavorite([])
       setMyCourses([])
+
       authService
         .getUser()
         .then((u) => {
-          if (!isActive) return
           setUser(u)
+          return u
+        })
+        .then((u) => {
           if (u?.rol === 'profesor') {
             // Fetch created courses
-            api('/courses/user/created', 'GET')
-              .then((res) => res.json())
-              .then((data) => {
-                if (isActive) setMyCourses(data)
-              })
-            // Fetch created recipes (by user)
-            api('/recipes/user/created', 'GET')
-              .then((res) => res.json())
-              .then((data) => {
-                if (isActive) setFavorite(data)
-              })
+            return Promise.all([
+              api('/courses/user/created', 'GET')
+                .then((res) => res.json())
+                .then((data) => {
+                  setMyCourses(data)
+                }),
+              // Fetch created recipes (by user)
+              api('/recipes/user/created', 'GET')
+                .then((res) => res.json())
+                .then((data) => {
+                  setFavorite(data)
+                })
+            ])
           } else {
             // Alumno: fetch favorites and subscribed courses
 
-            api('/recipes/user/favorites', 'GET', {
-              query: { limit: 4 }
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (isActive) setFavorite(data)
+            return Promise.all([
+              api('/recipes/user/favorites', 'GET', {
+                query: { limit: 4 }
               })
-            api('/courses/user/subscribed', 'GET')
-              .then((res) => res.json())
-              .then((data) => {
-                if (isActive) setMyCourses(data)
-              })
+                .then((res) => res.json())
+                .then((data) => {
+                  setFavorite(data)
+                }),
+              api('/courses/user/subscribed', 'GET')
+                .then((res) => res.json())
+                .then((data) => {
+                  setMyCourses(data)
+                })
+            ])
           }
         })
         .finally(() => {
-          if (isActive) setLoading(false)
+          setLoading(false)
         })
       return () => {
-        isActive = false
+        setLoading(false)
       }
     }, [])
   )
@@ -126,10 +132,15 @@ export default function RecetarioScreen() {
         style={{ marginHorizontal: 24, marginTop: 16, marginBottom: 16 }}
       />
       {user?.rol === 'profesor' && (
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginHorizontal: 24, marginBottom: 8 }}>
-          <Button onPress={() => router.push('/curso/nuevo')}>
-            Nuevo Curso
-          </Button>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            marginHorizontal: 24,
+            marginBottom: 8
+          }}
+        >
+          <Button onPress={() => router.push('/curso/nuevo')}>Nuevo Curso</Button>
         </View>
       )}
       <FlatList
@@ -165,10 +176,15 @@ export default function RecetarioScreen() {
         style={{ marginHorizontal: 24, marginTop: 16, marginBottom: 16 }}
       />
       {user?.rol === 'profesor' && (
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginHorizontal: 24, marginBottom: 8 }}>
-          <Button onPress={() => router.push('/receta/nueva')}>
-            Nueva Receta
-          </Button>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            marginHorizontal: 24,
+            marginBottom: 8
+          }}
+        >
+          <Button onPress={() => router.push('/receta/nueva')}>Nueva Receta</Button>
         </View>
       )}
       <FlatList
