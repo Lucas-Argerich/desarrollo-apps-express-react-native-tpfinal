@@ -29,7 +29,7 @@ function CourseSkeleton() {
 
 function RecipeSkeleton() {
   return (
-    <View style={styles.skeletonRecipeCard}>
+    <View style={[styles.skeletonRecipeCard, { width: SCREEN_WIDTH / 2 - 34 }]}>
       <View style={styles.skeletonRecipeImage} />
       <View style={styles.skeletonRecipeInfo}>
         <View style={styles.skeletonRecipeTitle} />
@@ -122,7 +122,7 @@ export default function RecetarioScreen() {
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           loading ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', marginHorizontal: 16 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', gap: 4 }}>
               {[1, 2, 3, 4].map((_, idx) => (
                 <RecipeSkeleton key={idx} />
               ))}
