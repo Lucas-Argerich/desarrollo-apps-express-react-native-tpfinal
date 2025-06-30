@@ -103,3 +103,27 @@ export async function api(
     signal
   })
 }
+
+export async function getUserCourses() {
+  const response = await api('/courses/user/subscribed', 'GET')
+  if (!response.ok) throw new Error('Error al obtener cursos')
+  return await response.json()
+}
+
+export async function getUserFavoriteRecipes() {
+  const response = await api('/recipes/user/favorites', 'GET')
+  if (!response.ok) throw new Error('Error al obtener recetas favoritas')
+  return await response.json()
+}
+
+export async function getUserCreatedCourses() {
+  const response = await api('/courses/user/created', 'GET')
+  if (!response.ok) throw new Error('Error al obtener cursos creados')
+  return await response.json()
+}
+
+export async function getUserCreatedRecipes() {
+  const response = await api('/recipes/user/created', 'GET')
+  if (!response.ok) throw new Error('Error al obtener recetas creadas')
+  return await response.json()
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, Image } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import Header from '../../components/ui/Header'
 import Button from '../../components/ui/Button'
@@ -7,10 +7,14 @@ import ProgressBar from '../../components/ui/ProgressBar'
 import CustomScreenView from '../../components/CustomScreenView'
 import { authService } from '../../services/auth'
 import { router } from 'expo-router'
+import { getUserCourses, getUserFavoriteRecipes, getUserCreatedRecipes, getUserCreatedCourses } from '../../services/api'
 
 export default function PerfilScreen() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [coursesLength, setCoursesLength] = useState<number>(0)
+  const [recipesLength, setRecipesLength] = useState<number>(0)
+  const [statsLoading, setStatsLoading] = useState(true)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -27,7 +31,31 @@ export default function PerfilScreen() {
     fetchUser()
   }, [])
 
-  if (loading) {
+  useEffect(() => {
+    if (!user) return
+    setStatsLoading(true)
+    const promises = []
+    if (user.rol === 'profesor') { 
+      promises.push(getUserCreatedCourses(), getUserCreatedRecipes())
+    } else {
+      promises.push(getUserCourses(), getUserFavoriteRecipes())
+    }
+    Promise.all(promises)
+      .then((results) => {
+        setCoursesLength(results[0].length)
+        setRecipesLength(results[1].length)
+      })
+      .catch((err) => {
+        console.log(err)
+        setCoursesLength(0)
+        setRecipesLength(0)
+      })
+      .finally(() => setStatsLoading(false))
+  }, [user])
+
+  const isProfesor = user?.rol === 'profesor'
+
+  if (loading || statsLoading) {
     return (
       <CustomScreenView style={styles.container}>
         <Header title="Perfil" subtitle="Cargando..." />
@@ -48,14 +76,11 @@ export default function PerfilScreen() {
           <Text style={styles.unauthorizedText}>
             Inicia sesión para acceder a tu perfil y ver tu progreso
           </Text>
-          <Button 
-            onPress={() => router.push('/auth/login')} 
-            style={styles.loginButton}
-          >
+          <Button onPress={() => router.push('/auth/login')} style={styles.loginButton}>
             Iniciar sesión
           </Button>
-          <Button 
-            onPress={() => router.push('/auth/register')} 
+          <Button
+            onPress={() => router.push('/auth/register')}
             style={styles.registerButton}
             textStyle={styles.registerButtonText}
           >
@@ -68,82 +93,66 @@ export default function PerfilScreen() {
 
   return (
     <CustomScreenView style={styles.container}>
-      <Header title="Perfil" subtitle="Tu información personal" />
+      <Header title="Perfil" subtitle={isProfesor ? 'Perfil de Profesor' : 'Perfil de Alumno'} />
 
-      <ScrollView style={styles.content}>
-        <View style={styles.profileSection}>
-          <Image source={{ uri: 'https://picsum.photos/200/200' }} style={styles.profileImage} />
-          <Text style={styles.profileName}>{user.name}</Text>
-          <Text style={styles.profileEmail}>{user.email}</Text>
+      <View style={styles.profileSection}>
+        <Image
+          source={{ uri: user.avatar || 'https://picsum.photos/200/200' }}
+          style={styles.profileImage}
+        />
+        <Text style={styles.profileName}>{user.nombre || user.name}</Text>
+        <Text style={styles.profileEmail}>{user.email}</Text>
 
-          <Button onPress={() => {}} style={styles.editButton} textStyle={styles.editButtonText}>
-            Editar perfil
-            <MaterialIcons name="edit" size={24} color="#FFF" />
-          </Button>
+        <Button onPress={() => {}} style={styles.editButton} textStyle={styles.editButtonText}>
+          Editar perfil
+          <MaterialIcons name="edit" size={24} color="#FFF" />
+        </Button>
+      </View>
+
+      <View style={styles.statsSection}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{coursesLength}</Text>
+          <Text style={styles.statLabel}>{isProfesor ? 'Cursos creados' : 'Cursos'}</Text>
         </View>
-
-        <View style={styles.statsSection}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>12</Text>
-            <Text style={styles.statLabel}>Cursos</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>45</Text>
-            <Text style={styles.statLabel}>Recetas</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>8</Text>
-            <Text style={styles.statLabel}>Certificados</Text>
-          </View>
+        
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{recipesLength}</Text>
+          <Text style={styles.statLabel}>{isProfesor ? 'Recetas creadas' : 'Recetas'}</Text>
         </View>
+      </View>
 
+      {!isProfesor && (
         <View style={styles.progressSection}>
           <Text style={styles.sectionTitle}>Progreso general</Text>
           <View style={styles.progressItem}>
             <View style={styles.progressHeader}>
               <Text style={styles.progressTitle}>Cursos completados</Text>
-              <Text style={styles.progressValue}>4/12</Text>
+              <Text style={styles.progressValue}>0/{coursesLength}</Text>
             </View>
-            <ProgressBar progress={0.33} style={styles.progressBar} />
+            <ProgressBar progress={0} style={styles.progressBar} />
           </View>
           <View style={styles.progressItem}>
             <View style={styles.progressHeader}>
               <Text style={styles.progressTitle}>Recetas guardadas</Text>
-              <Text style={styles.progressValue}>15/45</Text>
+              <Text style={styles.progressValue}>
+                {recipesLength}/{recipesLength}
+              </Text>
             </View>
-            <ProgressBar progress={0.33} style={styles.progressBar} />
+            <ProgressBar progress={recipesLength ? 1 : 0} style={styles.progressBar} />
           </View>
         </View>
+      )}
 
-        <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="bookmark-outline" size={24} color="#2F2F2F" />
-            <Text style={styles.menuText}>Recetas guardadas</Text>
-            <Ionicons name="chevron-forward" size={24} color="#888" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="trophy-outline" size={24} color="#2F2F2F" />
-            <Text style={styles.menuText}>Certificados</Text>
-            <Ionicons name="chevron-forward" size={24} color="#888" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="settings-outline" size={24} color="#2F2F2F" />
-            <Text style={styles.menuText}>Configuración</Text>
-            <Ionicons name="chevron-forward" size={24} color="#888" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="help-circle-outline" size={24} color="#2F2F2F" />
-            <Text style={styles.menuText}>Ayuda y soporte</Text>
-            <Ionicons name="chevron-forward" size={24} color="#888" />
-          </TouchableOpacity>
-        </View>
-
-        <Button onPress={() => {authService.logout(); setUser(null)}} style={styles.logoutButton}>
-          Cerrar sesión
-        </Button>
-      </ScrollView>
+      <Button
+        onPress={() => {
+          authService.logout()
+          setUser(null)
+        }}
+        style={styles.logoutButton}
+      >
+        Cerrar sesión
+      </Button>
     </CustomScreenView>
   )
 }
@@ -299,6 +308,6 @@ const styles = StyleSheet.create({
     marginLeft: 16
   },
   logoutButton: {
-    margin: 24,
+    margin: 24
   }
 })
