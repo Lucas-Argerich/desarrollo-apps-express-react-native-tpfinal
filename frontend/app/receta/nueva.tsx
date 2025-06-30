@@ -103,7 +103,7 @@ export default function NuevaRecetaScreen() {
           unidad: i.unidad
         })),
         utencilios: utensilios.map((i) => ({
-          
+          nombre: i.nombre
         })),
         pasos: pasos.map((p, idx) => ({
           texto: p.texto,
