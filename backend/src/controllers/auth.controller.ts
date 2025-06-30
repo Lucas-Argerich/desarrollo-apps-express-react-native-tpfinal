@@ -135,7 +135,7 @@ export const verifyRegistrationCode = async (req: AuthRequest, res: Response) =>
 export const completeRegistration = async (req: AuthRequest, res: Response) => {
   try {
     const { mail, nombre, password, numeroTarjeta, vencimientoTarjeta, CVVTarjeta, numeroTramite } = req.body as CompleteRegistrationInput;
-    if (typeof req.files !== 'object' || Object.keys(req.files).length === 0) {
+    if ((typeof req.files !== 'object' || Object.keys(req.files).length === 0) && numeroTramite) {
       res.status(400).json({ error: 'No se han subido archivos' });
       return;
     }
@@ -157,42 +157,47 @@ export const completeRegistration = async (req: AuthRequest, res: Response) => {
     }
 
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    const dniFront = files['dniFront'][0];
-    const dniBack = files['dniBack'][0];
-
-    if (!dniFront || !dniBack) {
+    const dniFront = files && files['dniFront'] && files['dniFront'][0];
+    const dniBack = files && files['dniBack'] && files['dniFront'][0];
+    
+    if ((!dniFront || !dniBack) && numeroTramite) {
       res.status(400).json({ error: 'Se requieren ambas imágenes del DNI' });
       return;
-    }
+    } 
 
-    // Upload files to Supabase
-    const [frontResult, backResult] = await Promise.all([
-      supabase.storage
+    let frontUrl = '';
+    let backUrl = '';
+    
+    if (dniFront && dniBack) {
+      // Upload files to Supabase
+      const [frontResult, backResult] = await Promise.all([
+        supabase.storage
         .from('uploads')
-        .upload(`${mail}/front-${Date.now()}${path.extname(dniFront.originalname)}`, dniFront.buffer, {
-          contentType: dniFront.mimetype,
-          upsert: false,
-        }),
-      supabase.storage
-        .from('uploads')
-        .upload(`${mail}/back-${Date.now()}${path.extname(dniBack.originalname)}`, dniBack.buffer, {
-          contentType: dniBack.mimetype,
-          upsert: false,
-        }),
-    ]);
-
-    if (frontResult.error || backResult.error) {
-      console.error('Error uploading files:', frontResult.error || backResult.error);
-      res.status(500).json({ error: 'Error al subir los archivos' });
-      return;
+          .upload(`${mail}/front-${Date.now()}${path.extname(dniFront.originalname)}`, dniFront.buffer, {
+            contentType: dniFront.mimetype,
+            upsert: false,
+          }),
+        supabase.storage
+          .from('uploads')
+          .upload(`${mail}/back-${Date.now()}${path.extname(dniBack.originalname)}`, dniBack.buffer, {
+            contentType: dniBack.mimetype,
+            upsert: false,
+          }),
+      ]);
+      
+      if (frontResult.error || backResult.error) {
+        console.error('Error uploading files:', frontResult.error || backResult.error);
+        res.status(500).json({ error: 'Error al subir los archivos' });
+        return;
+      }
+  
+      // Get public URLs for the uploaded files
+      frontUrl = supabase.storage.from('uploads').getPublicUrl(frontResult.data.path).data.publicUrl;
+      backUrl = supabase.storage.from('uploads').getPublicUrl(backResult.data.path).data.publicUrl;
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Get public URLs for the uploaded files
-    const frontUrl = supabase.storage.from('uploads').getPublicUrl(frontResult.data.path).data.publicUrl;
-    const backUrl = supabase.storage.from('uploads').getPublicUrl(backResult.data.path).data.publicUrl;
 
     // Update user data
     const updatedUser = await prisma.usuario.update({
