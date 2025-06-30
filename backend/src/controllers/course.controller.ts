@@ -112,11 +112,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
 
     const curso = await prisma.curso.create({
       data: {
-        usuario: {
-          connect: {
-            idUsuario: req.user.idUsuario
-          }
-        },
+        idUsuario: req.user.idUsuario,
         descripcion: courseData.descripcion,
         contenidos: courseData.contenidos,
         requerimientos: courseData.requerimientos,
