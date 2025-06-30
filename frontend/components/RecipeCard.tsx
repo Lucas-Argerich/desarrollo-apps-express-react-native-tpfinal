@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { Link } from 'expo-router'
 import { Receta } from '@/utils/types'
 import { BlurView } from 'expo-blur'
+import { capitalize } from '@/utils'
 
 interface RecipeCardProps {
   recipe: Receta
@@ -21,7 +22,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           <BlurView intensity={20} style={styles.infoCard}>
             <View style={styles.titleRow}>
               <Text style={styles.recipeTitle} numberOfLines={2}>
-                {recipe.nombreReceta}
+                {capitalize(recipe.nombreReceta)}
               </Text>
             </View>
             

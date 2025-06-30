@@ -431,6 +431,135 @@ export const getCreatedRecipes = async (req: AuthRequest, res: Response) => {
   }
 }
 
+export const updateRecipe = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' })
+      return
+    }
+
+    const recipeId = Number(req.params.id)
+    const recipeData: RecipeCreateInput = req.body
+
+    // Check if recipe exists and user owns it
+    const existingRecipe = await prisma.receta.findUnique({
+      where: { idReceta: recipeId },
+      include: { usuario: true }
+    })
+
+    if (!existingRecipe) {
+      res.status(404).json({ error: 'Receta no encontrada' })
+      return
+    }
+
+    if (existingRecipe.idUsuario !== req.user.idUsuario) {
+      res.status(403).json({ error: 'No tienes permisos para editar esta receta' })
+      return
+    }
+
+    let fotoPrincipalUrl = recipeData.fotoPrincipal;
+    let file = undefined;
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const imgField = files['fotoPrincipal'];
+      if (imgField) {
+        file = Array.isArray(imgField) ? imgField[0] : imgField;
+      }
+    }
+    if (file) {
+      const ext = file.originalname.split('.').pop();
+      const fileName = `recetas/${Date.now()}.${ext}`;
+      const { data, error } = await supabase.storage.from('uploads').upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true
+      });
+      if (error) {
+        res.status(500).json({ error: 'Error al subir imagen' });
+        return;
+      }
+      const { data: publicUrlData } = supabase.storage.from('uploads').getPublicUrl(data.path);
+      fotoPrincipalUrl = publicUrlData.publicUrl;
+    }
+
+    // Delete existing related data
+    await prisma.utilizado.deleteMany({
+      where: { idReceta: recipeId }
+    })
+    await prisma.paso.deleteMany({
+      where: { idReceta: recipeId }
+    })
+
+    // Update recipe with new data
+    const receta = await prisma.receta.update({
+      where: { idReceta: recipeId },
+      data: {
+        nombreReceta: recipeData.nombreReceta,
+        descripcionReceta: recipeData.descripcionReceta,
+        porciones: recipeData.porciones ?? 1,
+        cantidadPersonas: recipeData.cantidadPersonas ?? 1,
+        fotoPrincipal: fotoPrincipalUrl,
+        utilizados: {
+          create: [
+            ...recipeData.ingredientes.filter((f) => f.nombre !== undefined).map((ing) => ({
+              cantidad: ing.cantidad ?? 1,
+              ingrediente: {
+                connectOrCreate: {
+                  where: {
+                    nombre: ing.nombre!
+                  },
+                  create: {
+                    nombre: ing.nombre!
+                  }
+                }
+              }
+            })),
+            ...recipeData.utencilios.filter((f) => f.nombre !== undefined).map((ut) => ({
+              cantidad: ut.cantidad ?? 1,
+              utencilio: {
+                connectOrCreate: {
+                  where: {
+                    nombre: ut.nombre!
+                  },
+                  create: {
+                    nombre: ut.nombre!,
+                    descripcion: ut.descripcion
+                  }
+                }
+              }
+            }))
+          ]
+        },
+        pasos: {
+          create: recipeData.pasos.map((step) => ({
+            texto: step.texto,
+            nroPaso: step.nroPaso
+          }))
+        }
+      },
+      include: {
+        utilizados: {
+          include: {
+            ingrediente: true,
+            utencilio: true,
+            unidad: true
+          }
+        },
+        tipo: true,
+        pasos: true,
+        calificaciones: {
+          include: { usuario: true }
+        },
+        usuario: true
+      }
+    })
+
+    res.json(recipeParse(receta))
+  } catch (error) {
+    console.error('Error updating recipe:', error)
+    res.status(500).json({ error: 'Error al actualizar la receta' })
+  }
+}
+
 export function recipeParse(
   recipe: Partial<
     Prisma.RecetaGetPayload<{

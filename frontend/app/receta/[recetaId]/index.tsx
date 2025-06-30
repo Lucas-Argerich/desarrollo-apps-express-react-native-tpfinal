@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import CustomScreenView from '@/components/CustomScreenView'
@@ -7,10 +7,31 @@ import { api } from '@/services/api'
 import ActionButton from '@/components/ui/ActionButton'
 import Hero from '@/components/ui/Hero'
 import { useReceta } from '@/contexts/RecetaContext'
+import { authService } from '@/services/auth'
+import { capitalize } from '@/utils'
 
 export default function RecetaScreen() {
   const { recetaId: id } = useLocalSearchParams()
   const { receta, setReceta, loading, setLoading, servings, setServings, isFavorite, toggleFavorite, checkFavoriteStatus } = useReceta()
+  const [isOwner, setIsOwner] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  // Check if current user is the owner of the recipe
+  useEffect(() => {
+    const checkOwnership = async () => {
+      try {
+        const user = await authService.getUser()
+        if (user && receta) {
+          // Since the recipe user object doesn't have idUsuario, we'll compare by email for now
+          setIsOwner(user.email === receta.usuario?.mail)
+          setUserRole(user.rol)
+        }
+      } catch (error) {
+        console.error('Error checking ownership:', error)
+      }
+    }
+    checkOwnership()
+  }, [receta])
 
   // Calculate scaled ingredients based on current servings
   const getScaledIngredients = () => {
@@ -59,6 +80,25 @@ export default function RecetaScreen() {
     }
   }, [id, receta, setReceta, setServings, setLoading, checkFavoriteStatus])
 
+  const handleEditRecipe = () => {
+    // Navigate to edit recipe page
+    router.push(`/receta/${id}/editar`)
+  }
+
+  const handleDeleteRecipe = async () => {
+    // Show confirmation dialog and delete recipe
+    if (confirm('¿Estás seguro de que quieres eliminar esta receta?')) {
+      try {
+        const recipeId = Array.isArray(id) ? id[0] : id
+        await api('/recipes/:id', 'DELETE', { params: { id: recipeId } })
+        router.back()
+      } catch (error) {
+        console.error('Error deleting recipe:', error)
+        alert('Error al eliminar la receta')
+      }
+    }
+  }
+
   if (loading) {
     return (
       <CustomScreenView style={styles.container}>
@@ -85,7 +125,7 @@ export default function RecetaScreen() {
         {/* Hero Image */}
         <Hero image={receta.fotoPrincipal} state="open" isSaved={isFavorite} toggleSaved={toggleFavorite}>
           <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
-            {receta.nombreReceta}
+            {capitalize(receta.nombreReceta)}
           </Text>
           <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: '#fff', fontSize: 16 }}>
@@ -97,6 +137,20 @@ export default function RecetaScreen() {
             </View>
           </View>
         </Hero>
+
+        {/* Owner Actions */}
+        {isOwner && (
+          <View style={styles.ownerActions}>
+            <TouchableOpacity style={styles.editButton} onPress={handleEditRecipe}>
+              <Ionicons name="create-outline" size={20} color="#EE964B" />
+              <Text style={styles.editButtonText}>Editar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteRecipe}>
+              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+              <Text style={styles.deleteButtonText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <Text style={styles.sectionTitle}>Resumen</Text>
 
@@ -252,10 +306,10 @@ export default function RecetaScreen() {
           <Text style={styles.viewAllText}>Ver todas</Text>
         </TouchableOpacity>
       </CustomScreenView>
-      <ActionButton onPress={() => router.push(`/receta/${id}/pasos`)}>
+      { userRole === 'alumno' && <ActionButton onPress={() => router.push(`/receta/${id}/pasos`)}>
         <Text style={styles.startButtonText}>Empezar</Text>
         <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-      </ActionButton>
+      </ActionButton>}
     </>
   )
 }
@@ -503,5 +557,45 @@ const styles = StyleSheet.create({
   horizontalList: {
     paddingHorizontal: 28,
     gap: 4
+  },
+  ownerActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5'
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#EE964B',
+    borderRadius: 8,
+    backgroundColor: 'rgba(238, 150, 75, 0.1)'
+  },
+  editButtonText: {
+    color: '#EE964B',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)'
+  },
+  deleteButtonText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    fontWeight: '600'
   }
 })

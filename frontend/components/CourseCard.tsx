@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { Link } from 'expo-router'
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native'
 import { BlurView } from 'expo-blur'
+import { capitalize } from '@/utils'
 
 interface CourseCardProps {
   item: Curso
@@ -16,7 +17,7 @@ export default function CourseCard({ item: course }: CourseCardProps) {
           <Image source={{ uri: course.imagen ?? '' }} style={styles.img} />
           <View style={styles.cardOverlay}>
             <BlurView style={styles.cardtextBox} intensity={20}>
-              <Text style={styles.cardTitle}>{course.titulo}</Text>
+              <Text style={styles.cardTitle}>{capitalize(course.titulo ?? '')}</Text>
               <Text style={styles.cardLevel}>{course.dificultad}</Text>
               <View style={styles.cardStatsRow}>
                 <View style={styles.cardStat}>

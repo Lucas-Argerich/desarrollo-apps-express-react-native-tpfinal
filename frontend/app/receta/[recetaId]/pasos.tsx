@@ -6,6 +6,7 @@ import { router } from 'expo-router'
 import { useReceta } from '@/contexts/RecetaContext'
 import Hero from '@/components/ui/Hero'
 import ActionButton from '@/components/ui/ActionButton'
+import { capitalize } from '@/utils'
 
 export default function RecetaPasosScreen() {
   const { receta, isFavorite, toggleFavorite } = useReceta()
@@ -71,7 +72,7 @@ export default function RecetaPasosScreen() {
       <CustomScreenView style={styles.container}>
         <Hero image={receta.fotoPrincipal} state="closed" isSaved={isFavorite} toggleSaved={toggleFavorite}>
           <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
-            {receta.nombreReceta}
+            {capitalize(receta.nombreReceta)}
           </Text>
           <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: '#fff', fontSize: 16 }}>

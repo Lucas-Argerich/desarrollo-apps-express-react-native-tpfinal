@@ -58,7 +58,7 @@ export default function PerfilScreen() {
   if (loading || statsLoading) {
     return (
       <CustomScreenView style={styles.container}>
-        <Header title="Perfil" subtitle="Cargando..." />
+        <Header title="Perfil" subtitle="" />
         <View style={styles.loadingContainer}>
           <Text>Cargando...</Text>
         </View>

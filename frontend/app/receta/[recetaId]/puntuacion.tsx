@@ -6,6 +6,7 @@ import { router } from 'expo-router'
 import { useReceta } from '@/contexts/RecetaContext'
 import Hero from '@/components/ui/Hero'
 import { api } from '@/services/api'
+import { capitalize } from '@/utils'
 
 export default function RecetaPuntuacionScreen() {
   const [rating, setRating] = useState(0)
@@ -69,7 +70,7 @@ export default function RecetaPuntuacionScreen() {
   return (
     <CustomScreenView>
       <Hero image={receta.fotoPrincipal} state="closed" isSaved={isFavorite} toggleSaved={toggleFavorite}>
-        <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>{receta.nombreReceta}</Text>
+        <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>{capitalize(receta.nombreReceta)}</Text>
         <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
           <Text style={{ color: '#fff', fontSize: 16 }}>
             <Text style={{ fontSize: 12, fontStyle: 'italic' }}>De</Text> {receta.usuario.nombre}
@@ -84,7 +85,7 @@ export default function RecetaPuntuacionScreen() {
       <View style={styles.headerContainer}>
         <Text style={styles.completionTitle}>¡Receta Completada!</Text>
         <Text style={styles.completionSubtitle}>
-          ¿Cómo estuvo tu experiencia preparando {receta.nombreReceta}?
+          ¿Cómo estuvo tu experiencia preparando {capitalize(receta.nombreReceta)}?
         </Text>
       </View>
 

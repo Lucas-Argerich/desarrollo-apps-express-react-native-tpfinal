@@ -146,6 +146,17 @@ export const authService = {
     return user ? JSON.parse(user) : null
   },
 
+  async checkRole<T = 'alumno' | 'profesor'>(role: T | T[]): Promise<boolean> {
+    const user = await this.getUser()
+    if (!user) return false
+
+    const userRole = user.rol as T
+    if (Array.isArray(role)) {
+      return role.includes(userRole)
+    }
+    return userRole === role
+  },
+
   async requestPasswordReset(mail: string): Promise<void> {
     const response = await api('/auth/request-reset', 'POST', { data: { mail }})
 

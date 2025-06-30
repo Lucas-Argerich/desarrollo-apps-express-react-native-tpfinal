@@ -8,6 +8,7 @@ import CourseCard from '@/components/CourseCard'
 import ActionButton from '@/components/ui/ActionButton'
 import { Ionicons } from '@expo/vector-icons'
 import Hero from '@/components/ui/Hero'
+import { capitalize } from '@/utils'
 
 export default function CursoScreen() {
   const { cursoId } = useLocalSearchParams()
@@ -73,7 +74,7 @@ export default function CursoScreen() {
     <>
       <CustomScreenView>
         <Hero image={course.imagen ?? 'https://picsum.photos/id/374/462'}>
-          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>{course.titulo}</Text>
+          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>{capitalize(course.titulo ?? '')}</Text>
           <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
             <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
               <Text style={{ color: '#fff', fontSize: 16 }}>
