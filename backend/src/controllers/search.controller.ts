@@ -28,10 +28,20 @@ export const search = async (req: AuthRequest, res: Response) => {
     if (!type || type === 'recipe') {
       const recipes = await prisma.receta.findMany({
         include: {
-          utilizados: true,
+          utilizados: {
+            include: {
+              ingrediente: true,
+              utencilio: true,
+              unidad: true
+            }
+          },
           tipo: true,
           pasos: true,
-          calificaciones: true,
+          calificaciones: {
+            include: {
+              usuario: true
+            }
+          },
           usuario: true
         },
         where: {
@@ -44,7 +54,12 @@ export const search = async (req: AuthRequest, res: Response) => {
         skip: searchOffset,
       });
 
-      results.recipes = recipes.map(recipeParse)
+      results.recipes = recipes.map(r => {
+        let match = 0;
+        if (r.nombreReceta && r.nombreReceta.toLowerCase().includes(query.toLowerCase())) match += 10;
+        if (r.descripcionReceta && r.descripcionReceta.toLowerCase().includes(query.toLowerCase())) match += 3;
+        return { recipe: recipeParse(r), queryMatch: match };
+      });
     }
 
     // Search courses
@@ -74,7 +89,13 @@ export const search = async (req: AuthRequest, res: Response) => {
         skip: searchOffset,
       });
 
-      results.courses = courses.map(courseParse)
+      results.courses = courses.map(c => {
+        let match = 0;
+        if (c.cursoExtra?.titulo && c.cursoExtra.titulo.toLowerCase().includes(query.toLowerCase())) match += 10;
+        if (c.descripcion && c.descripcion.toLowerCase().includes(query.toLowerCase())) match += 3;
+        if (c.contenidos && c.contenidos.toLowerCase().includes(query.toLowerCase())) match += 3;
+        return { course: courseParse(c), queryMatch: match };
+      });
     }
 
     res.json(results);

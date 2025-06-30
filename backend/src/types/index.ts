@@ -143,8 +143,8 @@ export interface SearchQuery {
 }
 
 export interface SearchResponse {
-  recipes: ReturnType<typeof recipeParse>[];
-  courses: ReturnType<typeof courseParse>[];
+  recipes: { recipe: ReturnType<typeof recipeParse>, queryMatch: number }[];
+  courses: { course: ReturnType<typeof courseParse>, queryMatch: number }[];
 }
 
 // Alumno type (if needed)

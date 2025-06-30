@@ -10,15 +10,15 @@ import Tabs from '@/components/ui/Tabs';
 
 // Types for API response
 interface SearchResultApi {
-  recipes: Receta[];
-  courses: Curso[];
+  recipes: { recipe: Receta, queryMatch: number }[];
+  courses: { course: Curso, queryMatch: number }[];
 }
 
 type FilterType = 'todos' | 'recetas' | 'cursos' | 'ingredientes';
 
 type MixedResult =
-  | ({ type: 'course'; data: Curso })
-  | ({ type: 'recipe'; data: Receta });
+  | ({ type: 'course'; data: Curso, queryMatch: number })
+  | ({ type: 'recipe'; data: Receta, queryMatch: number });
 
 export default function BusquedaScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('todos');
@@ -101,14 +101,15 @@ export default function BusquedaScreen() {
   let mixedResults: MixedResult[] = [];
   if (activeFilter === 'todos') {
     mixedResults = [
-      ...results.courses.map((c) => ({ type: 'course' as const, data: c })),
-      ...results.recipes.map((r) => ({ type: 'recipe' as const, data: r })),
-    ];
+      ...results.courses.map((c) => ({ type: 'course' as const, data: c.course, queryMatch: c.queryMatch })),
+      ...results.recipes.map((r) => ({ type: 'recipe' as const, data: r.recipe, queryMatch: r.queryMatch })),
+    ]
   } else if (activeFilter === 'recetas') {
-    mixedResults = results.recipes.map((r) => ({ type: 'recipe' as const, data: r }));
+    mixedResults = results.recipes.map((r) => ({ type: 'recipe' as const, data: r.recipe, queryMatch: r.queryMatch }));
   } else if (activeFilter === 'cursos') {
-    mixedResults = results.courses.map((c) => ({ type: 'course' as const, data: c }));
+    mixedResults = results.courses.map((c) => ({ type: 'course' as const, data: c.course, queryMatch: c.queryMatch }));
   }
+  mixedResults.sort((a, b) => b.queryMatch - a.queryMatch)
 
   const renderResults = () => {
     if (loading) {
