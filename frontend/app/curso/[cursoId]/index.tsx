@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, Image, FlatList } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import CustomScreenView from '@/components/CustomScreenView'
 import { api } from '@/services/api'
 import { Curso } from '@/utils/types'
 import CourseCard from '@/components/CourseCard'
 import ActionButton from '@/components/ui/ActionButton'
+import { Ionicons } from '@expo/vector-icons'
+import Hero from '@/components/ui/Hero'
 
 export default function CursoScreen() {
   const { cursoId } = useLocalSearchParams()
@@ -35,14 +37,18 @@ export default function CursoScreen() {
 
   if (loading)
     return (
-      <CustomScreenView style={styles.bg}>
-        <Text>Cargando...</Text>
+      <CustomScreenView>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando...</Text>
+        </View>
       </CustomScreenView>
     )
   if (!course)
     return (
-      <CustomScreenView style={styles.bg}>
-        <Text>No se encontró el curso</Text>
+      <CustomScreenView>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>No se encontró el curso</Text>
+        </View>
       </CustomScreenView>
     )
 
@@ -65,167 +71,157 @@ export default function CursoScreen() {
 
   return (
     <>
-      <CustomScreenView style={styles.bg}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
-        >
-          {/* Top white bar */}
-          <View style={styles.topBar} />
-          {/* Imagen principal */}
-          <View style={{ alignItems: 'center', marginBottom: 18 }}>
-            <Image
-              source={{ uri: course.imagen ?? 'https://picsum.photos/id/374/462' }}
-              style={styles.courseImage}
-            />
-          </View>
-          {/* Tabs */}
-          <View style={styles.tabsRow}>
-            <Text style={styles.tabActive}>Resumen</Text>
-            <Text style={styles.tabInactive}>Detalles</Text>
-          </View>
-          {/* Info row */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoCol}>
-              <View style={styles.infoItem}>
-                <View style={styles.infoIcon}>
-                  <Image
-                    source={{ uri: 'https://picsum.photos/id/20/20' }}
-                    style={{ width: 20, height: 20 }}
-                  />
-                </View>
-                <Text style={styles.infoText}>6 semanas</Text>
-              </View>
-              <View style={styles.infoItem}>
-                <View style={styles.infoIcon}>
-                  <Image
-                    source={{ uri: 'https://picsum.photos/id/16/16' }}
-                    style={{ width: 16, height: 16 }}
-                  />
-                </View>
-                <View style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <Text style={styles.infoText}>2 horas</Text>
-                  <Text style={styles.infoSubText}>semanales</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.infoCol}>
-              <View style={styles.infoItem}>
-                <View style={styles.infoIcon}>
-                  <Image
-                    source={{ uri: 'https://picsum.photos/id/18/18' }}
-                    style={{ width: 18, height: 18 }}
-                  />
-                </View>
-                <Text style={styles.infoText}>intermedio</Text>
-              </View>
-              <View style={styles.infoItem}>
-                <Image
-                  source={{ uri: 'https://picsum.photos/id/34/34' }}
-                  style={{ width: 34, height: 34, borderRadius: 8 }}
-                />
-                <Text style={styles.infoText}>4.8</Text>
-              </View>
+      <CustomScreenView>
+        <Hero image={course.imagen ?? 'https://picsum.photos/id/374/462'}>
+          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>{course.titulo}</Text>
+          <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+              <Text style={{ color: '#fff', fontSize: 16 }}>
+                {course.calificacion?.toFixed(1) ?? '4.8'}
+              </Text>
+              <Ionicons name="star" size={16} color="#fff" />
             </View>
           </View>
-          {/* Descripción */}
-          <Text style={styles.description}>
-            {course.descripcion ||
-              'Aprende desde cero las técnicas esenciales de la panadería artesanal. Descubre cómo hacer panes crujientes, esponjosos y llenos de sabor utilizando ingredientes naturales y procesos tradicionales.'}
-          </Text>
-          {/* White bar */}
-          <View style={styles.topBar} />
-          {/* Contenido */}
-          <View style={styles.tabsRow}>
-            <Text style={styles.sectionTitle}>Contenido</Text>
-          </View>
-          <Text style={styles.contentDescription}>
-            Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y
-            accede a material digital.
-          </Text>
-          <View style={styles.modulesList}>
-            {course.modulos?.map((modulo, index) => (
-              <View key={index} style={styles.moduleItem}>
-                <Text style={styles.moduleNumber}>{index + 1}.</Text>
-                <Text style={styles.moduleTitle}>{modulo.titulo}</Text>
+        </Hero>
+
+        {/* Tabs */}
+        <View style={styles.tabsRow}>
+          <Text style={styles.tabActive}>Resumen</Text>
+          <Text style={styles.tabInactive}>Detalles</Text>
+        </View>
+
+        {/* Info row (match RecetaScreen style) */}
+        <View style={styles.infoContainer}>
+          <View style={styles.infoColumn}>
+            <View style={styles.infoItem}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="calendar-outline" size={16} color="#7E7E7E" />
               </View>
-            ))}
-          </View>
-          {/* White bar */}
-          <View style={styles.topBar} />
-          {/* Ingredientes Necesarios */}
-          <Text style={styles.sectionTitle}>Ingredientes Necesarios</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 18 }}
-          >
-            {ingredientes.map((ing, idx) => (
-              <View key={idx} style={styles.ingredientCard}>
-                <Image
-                  source={{ uri: 'https://picsum.photos/113/93' }}
-                  style={styles.ingredientImg}
-                />
-                <View style={styles.ingredientTextBox}>
-                  <Text style={styles.ingredientName}>{ing.nombre}</Text>
-                  <Text style={styles.ingredientQty}>{ing.cantidad}</Text>
-                </View>
+              <Text style={styles.infoText}>
+                {course.duracion ? `${course.duracion} semanas` : '6 semanas'}
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="time-outline" size={16} color="#7E7E7E" />
               </View>
-            ))}
-          </ScrollView>
-          {/* White bar */}
-          <View style={styles.topBar} />
-          {/* Utensilios Recomendados */}
-          <Text style={styles.sectionTitle}>Utensilios Recomendados</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 18 }}
-          >
-            {utensilios.map((ut, idx) => (
-              <View key={idx} style={styles.utensilCard}>
-                <Image
-                  source={{ uri: 'https://picsum.photos/113/93' }}
-                  style={styles.ingredientImg}
-                />
-                <View style={styles.ingredientTextBox}>
-                  <Text style={styles.ingredientName}>{ut}</Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-          {/* White bar */}
-          <View style={styles.topBar} />
-          {/* Cursos Relacionados */}
-          <View style={styles.relatedHeaderRow}>
-            <Text style={styles.relatedTitle}>Cursos Relacionados</Text>
-            <Text style={styles.relatedSeeMore}>Ver mas</Text>
+              <Text style={styles.infoText}>2 horas/semana</Text>
+            </View>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 32 }}
-          >
-            {related?.map((rel, idx) => (
-              <CourseCard item={rel} key={idx} />
-            ))}
-          </ScrollView>
-          {/* Inscribirse button */}
-        </ScrollView>
+          <View style={styles.infoColumn}>
+            <View style={styles.infoItem}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="restaurant-outline" size={16} color="#7E7E7E" />
+              </View>
+              <Text style={styles.infoText}>{course.dificultad || 'intermedio'}</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="star" size={16} color="#7E7E7E" />
+              </View>
+              <Text style={styles.infoText}>{course.calificacion?.toFixed(1) || '4.8'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Descripción */}
+        <Text style={styles.description}>
+          {course.descripcion ||
+            'Aprende desde cero las técnicas esenciales de la panadería artesanal. Descubre cómo hacer panes crujientes, esponjosos y llenos de sabor utilizando ingredientes naturales y procesos tradicionales.'}
+        </Text>
+        {/* Contenido */}
+        <View style={styles.tabsRow}>
+          <Text style={styles.sectionTitle}>Contenido</Text>
+        </View>
+        <Text style={styles.contentDescription}>
+          Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede
+          a material digital.
+        </Text>
+        <View style={styles.modulesList}>
+          {course.modulos?.map((modulo, index) => (
+            <View key={index} style={styles.moduleItem}>
+              <Text style={styles.moduleNumber}>{index + 1}.</Text>
+              <Text style={styles.moduleTitle}>{modulo.titulo}</Text>
+            </View>
+          ))}
+        </View>
+        {/* Ingredientes Necesarios */}
+        <Text style={styles.sectionTitle}>Ingredientes Necesarios</Text>
+        <FlatList
+          data={ingredientes}
+          keyExtractor={(item, idx) => idx.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ marginBottom: 18, gap: 16 }}
+          renderItem={({ item }) => (
+            <View style={styles.ingredientCard}>
+              <Image
+                source={{ uri: 'https://picsum.photos/113/93' }}
+                style={styles.ingredientImg}
+              />
+              <View style={styles.ingredientTextBox}>
+                <Text style={styles.ingredientName}>{item.nombre}</Text>
+                <Text style={styles.ingredientQty}>{item.cantidad}</Text>
+              </View>
+            </View>
+          )}
+          style={{ marginLeft: 16 }}
+        />
+        {/* Utensilios Recomendados */}
+        <Text style={styles.sectionTitle}>Utensilios Recomendados</Text>
+        <FlatList
+          data={utensilios}
+          keyExtractor={(item, idx) => idx.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ marginBottom: 18, gap: 16 }}
+          renderItem={({ item }) => (
+            <View style={styles.utensilCard}>
+              <Image
+                source={{ uri: 'https://picsum.photos/113/93' }}
+                style={styles.ingredientImg}
+              />
+              <View style={styles.ingredientTextBox}>
+                <Text style={styles.ingredientName}>{item}</Text>
+              </View>
+            </View>
+          )}
+          style={{ marginLeft: 16 }}
+        />
+        {/* Cursos Relacionados */}
+        <View style={styles.relatedHeaderRow}>
+          <Text style={styles.relatedTitle}>Cursos Relacionados</Text>
+          <Text style={styles.relatedSeeMore}>Ver mas</Text>
+        </View>
+        <FlatList
+          data={related || []}
+          keyExtractor={(item, idx) => idx.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ marginBottom: 32, gap: 28 }}
+          renderItem={({ item }) => <CourseCard item={item} />}
+          style={{ marginLeft: 16 }}
+        />
       </CustomScreenView>
       <ActionButton onPress={() => router.push(`/curso/${cursoId}/inscripcion`)}>
         <Text style={styles.enrollBtnText}>Inscribirse</Text>
+        <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
       </ActionButton>
     </>
   )
 }
 
 const styles = StyleSheet.create({
-  bg: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 50,
-    padding: 0
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32
+  },
+  loadingText: {
+    color: '#888',
+    fontSize: 16,
+    textAlign: 'center'
   },
   topBar: {
     width: 100,
@@ -245,8 +241,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 16,
-    marginBottom: 12,
-    marginLeft: 4
+    marginVertical: 16,
+    paddingHorizontal: 16
   },
   tabActive: {
     color: '#1B1B1B',
@@ -256,47 +252,41 @@ const styles = StyleSheet.create({
   },
   tabInactive: {
     color: 'rgba(27,27,27,0.62)',
-    fontSize: 22,
+    fontSize: 16,
     fontFamily: 'Inter',
     fontWeight: '600'
   },
-  infoRow: {
+  infoContainer: {
     flexDirection: 'row',
     gap: 32,
     marginBottom: 12,
-    marginLeft: 4
+    marginLeft: 4,
+    paddingHorizontal: 16
   },
-  infoCol: {
+  infoColumn: {
     flex: 1,
     gap: 24
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     marginBottom: 8
   },
-  infoIcon: {
+  iconContainer: {
     width: 34,
     height: 34,
     backgroundColor: '#EDEDED',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 6
+    padding: 8
   },
   infoText: {
     color: '#7E7E7E',
     fontSize: 18,
     fontFamily: 'Roboto',
     fontWeight: '500'
-  },
-  infoSubText: {
-    color: '#A5A5A5',
-    fontSize: 10,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    marginTop: -2
   },
   description: {
     color: '#A5A5A5',
@@ -305,15 +295,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 24,
     marginBottom: 18,
-    marginLeft: 4
+    marginTop: 12,
+    marginHorizontal: 16
   },
   sectionTitle: {
     color: '#1B1B1B',
     fontSize: 22,
     fontFamily: 'Inter',
     fontWeight: '600',
-    marginBottom: 8,
-    marginLeft: 4
+    marginHorizontal: 16,
+    marginVertical: 12
   },
   contentDescription: {
     color: '#A5A5A5',
@@ -322,16 +313,17 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 24,
     marginBottom: 18,
-    marginLeft: 4
+    marginHorizontal: 16
   },
   modulesList: {
     gap: 12,
-    marginBottom: 18
+    marginBottom: 18,
+    marginHorizontal: 16
   },
   moduleItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 22,
     padding: 22,
     borderWidth: 1,
     borderColor: '#E1E1E1',
@@ -340,7 +332,7 @@ const styles = StyleSheet.create({
   },
   moduleNumber: {
     color: '#A5A5A5',
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Roboto',
     fontWeight: '500',
     marginRight: 8
@@ -348,7 +340,7 @@ const styles = StyleSheet.create({
   moduleTitle: {
     flex: 1,
     color: '#A5A5A5',
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Roboto',
     fontWeight: '500'
   },
@@ -356,8 +348,7 @@ const styles = StyleSheet.create({
     width: 113,
     height: 177,
     backgroundColor: 'rgba(238,150,75,0.6)',
-    borderRadius: 20,
-    marginRight: 12,
+    borderRadius: 16,
     overflow: 'hidden'
   },
   ingredientImg: {
@@ -373,7 +364,7 @@ const styles = StyleSheet.create({
   ingredientName: {
     color: '#FFFFFF',
     fontFamily: 'Roboto',
-    fontWeight: '700',
+    fontWeight: '600',
     fontSize: 16,
     marginBottom: 2
   },
@@ -387,17 +378,16 @@ const styles = StyleSheet.create({
     width: 113,
     height: 177,
     backgroundColor: 'rgba(13,59,102,0.4)',
-    borderRadius: 20,
-    marginRight: 12,
+    borderRadius: 16,
     overflow: 'hidden'
   },
   relatedHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    marginLeft: 4,
-    marginRight: 4
+    marginBottom: 18,
+    marginTop: 16,
+    marginHorizontal: 16,
   },
   relatedTitle: {
     color: '#2F2F2F',
@@ -409,27 +399,7 @@ const styles = StyleSheet.create({
     color: '#888888',
     fontFamily: 'Roboto',
     fontWeight: '700',
-    fontSize: 16
-  },
-  enrollBtn: {
-    width: 373,
-    height: 66,
-    backgroundColor: '#EE964B',
-    borderRadius: 20,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 12,
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 13 },
-    shadowOpacity: 0.12,
-    shadowRadius: 26,
-    elevation: 4,
-    position: 'absolute',
-    bottom: 20
+    fontSize: 14
   },
   enrollBtnText: {
     color: '#FFFFFF',

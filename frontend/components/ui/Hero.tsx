@@ -6,17 +6,13 @@ import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
 
 type HeroProps = {
   image: string
-  state: 'open' | 'closed'
-  children: React.ReactNode
-} & (
-  | { isSaved: undefined; toggleSaved: undefined }
-  | {
-      isSaved: boolean | null
-      toggleSaved: () => Promise<void>
-    }
-)
+  state?: 'open' | 'closed'
+  children?: React.ReactNode
+  isSaved?: boolean | null
+  toggleSaved?: () => Promise<void>
+}
 
-export default function Hero({ image, state, isSaved, toggleSaved, children }: HeroProps) {
+export default function Hero({ image, state = 'open', isSaved, toggleSaved, children }: HeroProps) {
   const [isLoadingSave, setIsLoadingSave] = useState(true)
   const [contentHeight, setContentHeight] = useState(200)
   const heroHeight = state === 'open' ? 400 : contentHeight + 100
