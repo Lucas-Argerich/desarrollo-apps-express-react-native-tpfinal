@@ -3,6 +3,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
 import { CourseCreateInput } from '../types';
 import { createClient } from '@supabase/supabase-js';
+import { connect } from 'http2';
 const prisma = new PrismaClient();
 
 const supabase = createClient(
@@ -111,7 +112,11 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
 
     const curso = await prisma.curso.create({
       data: {
-        idUsuario: req.user.idUsuario,
+        usuario: {
+          connect: {
+            idUsuario: req.user.idUsuario
+          }
+        },
         descripcion: courseData.descripcion,
         contenidos: courseData.contenidos,
         requerimientos: courseData.requerimientos,
