@@ -40,10 +40,7 @@ export const getRecipes = async (req: AuthRequest, res: Response) => {
           usuario: true,
           alumnosFavorito: true
         },
-        orderBy: [
-          { alumnosFavorito: { _count: 'desc' } },
-          { idReceta: 'desc' }
-        ]
+        orderBy: [{ alumnosFavorito: { _count: 'desc' } }, { idReceta: 'desc' }]
       })
     } else {
       // Default: latest
@@ -127,19 +124,35 @@ export const createRecipe = async (req: AuthRequest, res: Response) => {
         porciones: recipeData.porciones,
         cantidadPersonas: recipeData.cantidadPersonas,
         utilizados: {
-          create: recipeData.ingredientes.map((ing) => ({
-            cantidad: ing.cantidad,
-            ingrediente: {
-              connectOrCreate: {
-                where: {
-                  nombre: ing.nombre
-                },
-                create: {
-                  nombre: ing.nombre
+          create: [
+            ...recipeData.ingredientes.filter((f) => f.nombre !== undefined).map((ing) => ({
+              cantidad: ing.cantidad,
+              ingrediente: {
+                connectOrCreate: {
+                  where: {
+                    nombre: ing.nombre!
+                  },
+                  create: {
+                    nombre: ing.nombre!
+                  }
                 }
               }
-            }
-          }))
+            })),
+            ...recipeData.utencilios.filter((f) => f.nombre !== undefined).map((ut) => ({
+              cantiidad: ut.cantidad,
+              utencilio: {
+                connectOrCreate: {
+                  where: {
+                    nombre: ut.nombre!
+                  },
+                  create: {
+                    nombre: ut.nombre!,
+                    descripcion: ut.descripcion
+                  }
+                }
+              }
+            }))
+          ]
         },
         pasos: {
           create: recipeData.pasos.map((step) => ({
@@ -157,6 +170,7 @@ export const createRecipe = async (req: AuthRequest, res: Response) => {
       status: 'active'
     })
   } catch (error) {
+    console.error(error)
     res.status(500).json({ error: 'Error al crear la receta' })
   }
 }
@@ -320,7 +334,7 @@ export const getFavorites = async (req: AuthRequest, res: Response) => {
       }
     })
 
-    const favoriteRecipes = favorites.map(fav => recipeParse(fav.receta))
+    const favoriteRecipes = favorites.map((fav) => recipeParse(fav.receta))
 
     res.json(favoriteRecipes)
   } catch (error) {

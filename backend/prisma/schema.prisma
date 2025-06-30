@@ -73,7 +73,7 @@ model Favorito {
 
 model Ingrediente {
   idIngrediente Int         @id @default(autoincrement())
-  nombre        String      @db.VarChar(200)
+  nombre        String      @db.VarChar(200) @unique
   utilizados    Utilizado[]
 }
 
@@ -220,8 +220,6 @@ model CodigosVerificacion {
   vencimiento DateTime
   activo      Boolean  @default(true)
   usuario     Usuario? @relation(fields: [idUsuario], references: [idUsuario])
-
-  @@unique([idUsuario])
 }
 
 model Utencilio {

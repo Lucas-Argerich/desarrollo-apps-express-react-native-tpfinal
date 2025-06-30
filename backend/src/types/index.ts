@@ -72,6 +72,7 @@ export interface RecipeCreateInput {
   cantidadPersonas?: number;
   idTipo?: number;
   ingredientes: IngredientCreateInput[];
+  utencilios: UtencilCreateInput[];
   pasos: PasoCreateInput[];
 }
 
@@ -85,6 +86,12 @@ export interface IngredientCreateInput {
   nombre?: string;
   cantidad?: number;
   unidad?: string;
+}
+
+export interface UtencilCreateInput {
+  nombre?: string;
+  cantidad?: number;
+  descripcion?: string;
 }
 
 export interface PasoCreateInput {
