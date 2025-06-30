@@ -1,90 +1,124 @@
-import { FlatList, Text, TouchableOpacity, View, StyleSheet } from 'react-native'
+import {
+  FlatList,
+  View,
+  StyleSheet,
+  Animated,
+  ViewProps
+} from 'react-native'
 import RecipeCard from '../RecipeCard'
 import { useEffect, useState } from 'react'
 import { api } from '@/services/api'
 import { Receta } from '@/utils/types'
+import Tabs from '../ui/Tabs'
+import SectionHeader from '../ui/SectionHeader'
 
-const recipeTabs = ['Recomendados', 'Mas Vistos', 'Ultimos']
+interface RecetasListProps extends ViewProps {
+  title?: string
+}
 
-export default function RecetasList() {
+const recipeTabs = ['Mas Vistos', 'Ultimos']
+
+export default function RecetasList({ title, style, ...props }: RecetasListProps) {
   const [activeTab, setActiveTab] = useState(0)
   const [recipes, setRecipes] = useState<Receta[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    api('/recipes', 'GET', {})
+    if (isLoading) return
+    setIsLoading(true)
+
+    api('/recipes', 'GET', {
+      query: {
+        sort: ['saves', 'latest'][activeTab]
+      }
+    })
       .then((res) => res.json())
       .then((data) => setRecipes(data))
-  }, [])
+      .finally(() => setIsLoading(false))
+  }, [activeTab])
 
   return (
-    <>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Explorá Recetas</Text>
-        <TouchableOpacity>
-          <Text style={styles.seeMore}>Ver mas</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={style} {...props}>
+      <SectionHeader title={title ?? 'Explorá Recetas'} />
       {/* Tabs */}
-      <View style={styles.tabsRow}>
-        {recipeTabs.map((tab, idx) => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tabButton, activeTab === idx && styles.tabButtonActive]}
-            onPress={() => setActiveTab(idx)}
-          >
-            <Text style={[styles.tabText, activeTab === idx && styles.tabTextActive]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
+      <Tabs tabs={recipeTabs} activeTab={activeTab} onTabPress={(_, idx) => setActiveTab(idx)} />
+      {/* Placeholder Animation */}
+      {isLoading ? (
+        <FlatList
+          data={[1, 2, 3]}
+          keyExtractor={(item) => item.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ minHeight: 305 }}
+          contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
+          renderItem={() => <RecipeSkeleton />}
+        />
+      ) : (
+        <FlatList
+          data={recipes}
+          keyExtractor={(item) => item.idReceta.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ minHeight: 305 }}
+          contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
+          renderItem={({ item }) => <RecipeCard recipe={item} />}
+        />
+      )}
+    </View>
+  )
+}
+
+function RecipeSkeleton() {
+  return (
+    <View style={styles.skeletonCard}>
+      <Animated.View style={styles.skeletonImage} />
+      <View style={styles.skeletonInfo}>
+        <View style={styles.skeletonTitle} />
+        <View style={styles.skeletonMetaRow}>
+          <View style={styles.skeletonMeta} />
+          <View style={styles.skeletonMeta} />
+        </View>
       </View>
-      {/* Recipes Horizontal Scroll */}
-      <FlatList
-        data={recipes}
-        keyExtractor={(item) => item.idReceta.toString()}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
-        renderItem={({ item }) => <RecipeCard recipe={item} />}
-      />
-    </>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  sectionHeader: {
+  skeletonCard: {
+    width: 220,
+    height: 305,
+    borderRadius: 24,
+    backgroundColor: '#ececec',
+    marginRight: 16,
+    overflow: 'hidden',
+    flexDirection: 'column'
+  },
+  skeletonImage: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#e0e0e0'
+  },
+  skeletonInfo: {
+    flex: 1,
+    padding: 14,
+    justifyContent: 'flex-end'
+  },
+  skeletonTitle: {
+    width: '80%',
+    height: 18,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
+    marginBottom: 12
+  },
+  skeletonMetaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    marginTop: 24
+    alignItems: 'center'
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold'
-  },
-  seeMore: {
-    color: '#007AFF',
-    fontSize: 16
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 16
-  },
-  tabButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#F0F0F0'
-  },
-  tabButtonActive: {
-    backgroundColor: '#007AFF'
-  },
-  tabText: {
-    color: '#666'
-  },
-  tabTextActive: {
-    color: 'white'
+  skeletonMeta: {
+    width: 40,
+    height: 14,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6
   }
 })

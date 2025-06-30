@@ -1,332 +1,235 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import CustomScreenView from '../../components/CustomScreenView';
+import { useCallback, useState } from 'react'
+import { Text, StyleSheet, FlatList, View, Dimensions } from 'react-native'
+import CustomScreenView from '../../components/CustomScreenView'
+import Header from '@/components/ui/Header'
+import SearchResult from '@/components/SearchResult'
+import { api } from '@/services/api'
+import { Curso, Receta } from '@/utils/types'
+import SectionHeader from '@/components/ui/SectionHeader'
+import { useFocusEffect } from 'expo-router'
+import CourseCard from '@/components/CourseCard'
+import { Ionicons } from '@expo/vector-icons'
 
-const courses = [
-  {
-    id: 1,
-    title: 'Cocina Mediterránea: Técnicas y Secretos',
-    level: 'Nivel Intermedio - $$$',
-    students: 20,
-    rating: 4.7,
-    image: 'https://picsum.photos/317/200',
-  },
-  {
-    id: 2,
-    title: 'Cocina Mediterránea: Técnicas y Secretos',
-    level: 'Nivel Intermedio - $$$',
-    students: 20,
-    rating: 4.8,
-    image: 'https://picsum.photos/317/200',
-  },
-];
+const SCREEN_WIDTH = Dimensions.get('window').width
 
-const recipes = [
-  {
-    id: 1,
-    title: 'Ensalada Tropical',
-    type: 'Receta',
-    rating: 4.8,
-    image: 'https://picsum.photos/177/240',
-  },
-  {
-    id: 2,
-    title: 'Ensalada Tropical',
-    type: 'Receta',
-    rating: 4.8,
-    image: 'https://picsum.photos/177/240',
-  },
-  {
-    id: 3,
-    title: 'Ensalada Tropical',
-    type: 'Receta',
-    rating: 4.8,
-    image: 'https://picsum.photos/177/240',
-  },
-  {
-    id: 4,
-    title: 'Ensalada Tropical',
-    type: 'Receta',
-    rating: 4.8,
-    image: 'https://picsum.photos/177/240',
-  },
-];
+function CourseSkeleton() {
+  return (
+    <View style={styles.skeletonCourseCard}>
+      <View style={styles.skeletonCourseImage} />
+      <View style={styles.skeletonCourseInfo}>
+        <View style={styles.skeletonCourseTitle} />
+        <View style={styles.skeletonCourseMetaRow}>
+          <View style={styles.skeletonCourseMeta} />
+          <View style={styles.skeletonCourseMeta} />
+        </View>
+      </View>
+    </View>
+  )
+}
+
+function RecipeSkeleton() {
+  return (
+    <View style={styles.skeletonRecipeCard}>
+      <View style={styles.skeletonRecipeImage} />
+      <View style={styles.skeletonRecipeInfo}>
+        <View style={styles.skeletonRecipeTitle} />
+        <View style={styles.skeletonRecipeMetaRow}>
+          <View style={styles.skeletonRecipeMeta} />
+          <View style={styles.skeletonRecipeMeta} />
+        </View>
+      </View>
+    </View>
+  )
+}
+
+function EmptyState({ icon, message }: { icon: any; message: string }) {
+  return (
+    <View style={[styles.emptyStateContainer, { width: SCREEN_WIDTH - 32 }]}>
+      <Ionicons name={icon} size={48} color="#E0E0E0" style={{ marginBottom: 12 }} />
+      <Text style={styles.emptyStateText}>{message}</Text>
+    </View>
+  )
+}
 
 export default function RecetarioScreen() {
+  const [myCourses, setMyCourses] = useState<Curso[]>([])
+  const [favorite, setFavorite] = useState<Receta[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true)
+      setFavorite([])
+      setMyCourses([])
+      Promise.all([
+        api('/recipes/user/favorites', 'GET', {
+          query: {
+            limit: 4
+          }
+        })
+          .then((res) => res.json())
+          .then((data) => setFavorite(data)),
+        api('/courses/user/subscribed', 'GET')
+          .then((res) => res.json())
+          .then((data) => setMyCourses(data))
+      ])
+        .finally(() => setLoading(false))
+    }, [])
+  )
+
   return (
-    <CustomScreenView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>Mi Recetario</Text>
-            <Image source={{ uri: 'https://picsum.photos/50/50' }} style={styles.profileImage} />
-          </View>
-          <Text style={styles.subtitle}>Tus cursos y recetas favoritas en un solo lugar</Text>
-        </View>
+    <CustomScreenView>
+      {/* Header */}
+      <Header title="Mi Recetario" subtitle="Tus cursos y recetas favoritas en un solo lugar" />
 
-        {/* My Courses Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Mis Cursos</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>Ver todo</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.coursesContainer}>
-            {courses.map((course) => (
-              <TouchableOpacity key={course.id} style={styles.courseCard}>
-                <Image source={{ uri: course.image }} style={styles.courseImage} />
-                <View style={styles.courseInfo}>
-                  <View style={styles.courseHeader}>
-                    <Text style={styles.courseTitle}>{course.title}</Text>
-                    <Text style={styles.courseLevel}>{course.level}</Text>
-                  </View>
-                  <View style={styles.courseFooter}>
-                    <View style={styles.studentsContainer}>
-                      <Image source={{ uri: 'https://picsum.photos/13/13' }} style={styles.icon} />
-                      <View style={styles.studentsInfo}>
-                        <Text style={styles.studentsCount}>{course.students}</Text>
-                        <Image source={{ uri: 'https://picsum.photos/12/12' }} style={styles.userIcon} />
-                      </View>
-                    </View>
-                    <View style={styles.ratingContainer}>
-                      <Text style={styles.rating}>{course.rating}</Text>
-                      <Image source={{ uri: 'https://picsum.photos/12/12' }} style={styles.starIcon} />
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+      <SectionHeader
+        title="Mis Cursos"
+        style={{ marginHorizontal: 24, marginTop: 16, marginBottom: 16 }}
+      />
+      <FlatList
+        data={myCourses}
+        keyExtractor={(item) => item.idCurso.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingLeft: 16, paddingVertical: 8 }}
+        renderItem={({ item }) => <CourseCard item={item} />}
+        ListEmptyComponent={
+          loading ? (
+            <View style={{ flexDirection: 'row' }}>
+              {[1, 2].map((_, idx) => (
+                <CourseSkeleton key={idx} />
+              ))}
+            </View>
+          ) : (
+            <EmptyState icon="school-outline" message="No estas suscrito a ningún curso." />
+          )
+        }
+        style={{ minHeight: 211 }}
+      />
 
-        {/* My Recipes Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Mis Recetas</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>Ver todo</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.recipesGrid}>
-            {recipes.map((recipe) => (
-              <TouchableOpacity key={recipe.id} style={styles.recipeCard}>
-                <Image source={{ uri: recipe.image }} style={styles.recipeImage} />
-                <View style={styles.recipeInfo}>
-                  <View style={styles.recipeHeader}>
-                    <View style={styles.recipeTitleContainer}>
-                      <Text style={styles.recipeTitle}>{recipe.title}</Text>
-                      <Text style={styles.recipeType}>{recipe.type}</Text>
-                    </View>
-                    <View style={styles.recipeRating}>
-                      <Text style={styles.rating}>{recipe.rating}</Text>
-                      <Image source={{ uri: 'https://picsum.photos/12/12' }} style={styles.starIcon} />
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <TouchableOpacity style={styles.allRecipesButton}>
-            <Text style={styles.allRecipesText}>Todas mis recetas</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      <SectionHeader
+        title="Mis Recetas"
+        style={{ marginHorizontal: 24, marginTop: 16, marginBottom: 16 }}
+      />
+      <FlatList
+        scrollEnabled={false}
+        data={favorite}
+        keyExtractor={(_, idx) => idx.toString()}
+        numColumns={2}
+        renderItem={({ item }) => <SearchResult result={{ type: 'recipe', data: item }} />}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          loading ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start', marginHorizontal: 16 }}>
+              {[1, 2, 3, 4].map((_, idx) => (
+                <RecipeSkeleton key={idx} />
+              ))}
+            </View>
+          ) : (
+            <EmptyState icon="heart-outline" message="No tienes recetas favoritas." />
+          )
+        }
+        style={{ marginHorizontal: 16, minHeight: 320 }}
+      />
     </CustomScreenView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 28,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: 'Montserrat',
-    fontWeight: '600',
-    color: '#2F2F2F',
-  },
-  profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
-  subtitle: {
+  loadingText: {
+    color: '#888',
     fontSize: 16,
-    fontFamily: 'Inter',
-    fontWeight: '500',
-    color: '#888888',
-    letterSpacing: 0.08,
+    padding: 16,
+    textAlign: 'center'
   },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2F2F2F',
-  },
-  seeAllText: {
-    fontSize: 16,
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    color: '#888888',
-  },
-  coursesContainer: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  courseCard: {
-    width: 317,
+  skeletonCourseCard: {
+    width: 280,
     height: 211,
-    borderRadius: 30,
+    borderRadius: 24,
+    backgroundColor: '#ececec',
+    marginRight: 16,
     overflow: 'hidden',
+    flexDirection: 'column',
   },
-  courseImage: {
+  skeletonCourseImage: {
     width: '100%',
-    height: '100%',
-    position: 'absolute',
+    height: 120,
+    backgroundColor: '#e0e0e0',
   },
-  courseInfo: {
+  skeletonCourseInfo: {
     flex: 1,
+    padding: 14,
     justifyContent: 'flex-end',
-    padding: 15,
   },
-  courseHeader: {
-    backgroundColor: 'rgba(29,29,29,0.4)',
-    borderRadius: 15,
-    padding: 11,
-    marginBottom: 11,
+  skeletonCourseTitle: {
+    width: '80%',
+    height: 18,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
+    marginBottom: 12,
   },
-  courseTitle: {
-    fontSize: 14,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  courseLevel: {
-    fontSize: 10,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    color: '#CAC8C8',
-  },
-  courseFooter: {
+  skeletonCourseMetaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  studentsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  skeletonCourseMeta: {
+    width: 40,
+    height: 14,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
   },
-  icon: {
-    width: 13,
-    height: 13,
-  },
-  studentsInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  studentsCount: {
-    fontSize: 14,
-    fontFamily: 'Roboto',
-    color: '#CAC8C8',
-  },
-  userIcon: {
-    width: 12,
-    height: 12,
-    marginLeft: 4,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  rating: {
-    fontSize: 14,
-    fontFamily: 'Roboto',
-    color: '#CAC8C8',
-  },
-  starIcon: {
-    width: 12,
-    height: 12,
-  },
-  recipesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  recipeCard: {
-    width: 177,
-    height: 240,
+  skeletonRecipeCard: {
+    width: 150,
+    height: 220,
     borderRadius: 16,
+    backgroundColor: '#ececec',
+    marginRight: 16,
+    marginBottom: 16,
     overflow: 'hidden',
+    flexDirection: 'column',
   },
-  recipeImage: {
+  skeletonRecipeImage: {
     width: '100%',
-    height: '100%',
-    position: 'absolute',
+    height: 120,
+    backgroundColor: '#e0e0e0',
   },
-  recipeInfo: {
+  skeletonRecipeInfo: {
     flex: 1,
+    padding: 10,
     justifyContent: 'flex-end',
-    padding: 6,
   },
-  recipeHeader: {
-    backgroundColor: 'rgba(29,29,29,0.4)',
-    borderRadius: 10,
-    padding: 11,
+  skeletonRecipeTitle: {
+    width: '80%',
+    height: 16,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
+    marginBottom: 10,
   },
-  recipeTitleContainer: {
-    flex: 1,
-    marginBottom: 4,
-  },
-  recipeTitle: {
-    fontSize: 14,
-    fontFamily: 'Roboto',
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  recipeType: {
-    fontSize: 14,
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    color: '#CAC8C8',
-  },
-  recipeRating: {
+  skeletonRecipeMetaRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 4,
   },
-  allRecipesButton: {
+  skeletonRecipeMeta: {
+    width: 30,
+    height: 12,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 6,
+  },
+  emptyStateContainer: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    marginTop: 14,
+    justifyContent: 'center',
+    padding: 32,
+    minHeight: 120,
   },
-  allRecipesText: {
+  emptyStateText: {
+    color: '#888',
     fontSize: 16,
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    color: '#888888',
+    textAlign: 'center',
+    marginTop: 4,
   },
-}); 
+})

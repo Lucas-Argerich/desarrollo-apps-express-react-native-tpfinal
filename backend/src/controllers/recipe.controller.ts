@@ -8,33 +8,68 @@ const prisma = new PrismaClient()
 interface RecipeQuery {
   limit?: string
   offset?: string
+  sort?: 'saves' | 'latest'
 }
 
 export const getRecipes = async (req: AuthRequest, res: Response) => {
   try {
-    const { limit = '10', offset = '0' }: RecipeQuery = req.query
+    const { limit = '10', offset = '0', sort = 'saves' }: RecipeQuery = req.query
 
-    const recipes = await prisma.receta.findMany({
-      take: Number(limit),
-      skip: Number(offset),
-      include: {
-        utilizados: {
-          include: {
-            ingrediente: true,
-            utencilio: true,
-            unidad: true
-          }
+    let recipes
+
+    if (sort === 'saves') {
+      // Order by number of favorites (favoritos) descending
+      recipes = await prisma.receta.findMany({
+        take: Number(limit),
+        skip: Number(offset),
+        include: {
+          utilizados: {
+            include: {
+              ingrediente: true,
+              utencilio: true,
+              unidad: true
+            }
+          },
+          tipo: true,
+          pasos: true,
+          calificaciones: {
+            include: {
+              usuario: true
+            }
+          },
+          usuario: true,
+          alumnosFavorito: true
         },
-        tipo: true,
-        pasos: true,
-        calificaciones: {
-          include: {
-            usuario: true
-          }
+        orderBy: [
+          { alumnosFavorito: { _count: 'desc' } },
+          { idReceta: 'desc' }
+        ]
+      })
+    } else {
+      // Default: latest
+      recipes = await prisma.receta.findMany({
+        take: Number(limit),
+        skip: Number(offset),
+        include: {
+          utilizados: {
+            include: {
+              ingrediente: true,
+              utencilio: true,
+              unidad: true
+            }
+          },
+          tipo: true,
+          pasos: true,
+          calificaciones: {
+            include: {
+              usuario: true
+            }
+          },
+          usuario: true
         },
-        usuario: true
-      }
-    })
+        orderBy: { idReceta: 'desc' }
+      })
+    }
 
     res.json(recipes.map(recipeParse))
   } catch (error) {

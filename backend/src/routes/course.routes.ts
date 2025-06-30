@@ -5,8 +5,9 @@ import {
   createCourse,
   registerForCourse,
   unregisterFromCourse,
+  getSubscribedCourses
 } from '../controllers/course.controller';
-import { auth } from '../middleware/auth';
+import { auth, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -15,8 +16,9 @@ router.get('/', getCourses);
 router.get('/:id', getCourse);
 
 // Protected routes
-router.post('/', auth, createCourse);
-router.post('/:id/register', auth, registerForCourse);
-router.delete('/:id/register', auth, unregisterFromCourse);
+router.post('/', auth, requireRole(['profesor']), createCourse);
+router.post('/:id/register', auth, requireRole(['alumno']), registerForCourse);
+router.delete('/:id/register', auth, requireRole(['alumno']), unregisterFromCourse);
+router.get('/user/subscribed', auth, requireRole(['alumno']), getSubscribedCourses);
 
 export default router; 

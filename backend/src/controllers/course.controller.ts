@@ -198,7 +198,43 @@ export const unregisterFromCourse = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: 'Error al desregistrarse del curso' });
   }
-}; 
+};
+
+export const getSubscribedCourses = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+
+    // Find all AsistenciaCurso for this user
+    const asistencias = await prisma.asistenciaCurso.findMany({
+      where: { idAlumno: req.user.idUsuario },
+      select: { cronograma: { select: { idCurso: true } } }
+    });
+    const courseIds = asistencias.map(a => a.cronograma.idCurso);
+
+    // Get all courses for these IDs
+    const cursos = await prisma.curso.findMany({
+      where: { idCurso: { in: courseIds } },
+      include: {
+        cursoExtra: true,
+        cronogramas: {
+          include: {
+            asistencias: {
+              include: { alumno: true },
+              distinct: ['idAlumno']
+            }
+          }
+        }
+      }
+    });
+
+    res.json(cursos.map(courseParse));
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener cursos inscritos' });
+  }
+}
 
 export const courseParse = (
   course: Partial<

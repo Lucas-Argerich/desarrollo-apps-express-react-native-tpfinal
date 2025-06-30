@@ -2,10 +2,11 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 
 export default function BottomNav({ state, navigation }: BottomTabBarProps) {
   return (
-    <View style={styles.container}>
+    <BlurView intensity={20} style={styles.container}>
       <TouchableOpacity 
         style={styles.navItem}
         onPress={() => navigation.navigate('index')}
@@ -41,7 +42,7 @@ export default function BottomNav({ state, navigation }: BottomTabBarProps) {
       >
         <Ionicons name="person-outline" size={23} color="#2F2F2F" />
       </TouchableOpacity>
-    </View>
+    </BlurView>
   );
 }
 
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
     paddingHorizontal: 48,
-    backgroundColor: 'rgba(255,255,255,0.93)',
+    backgroundColor: 'rgba(255,255,255,0.90)',
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -84,6 +85,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 4,
     },
+    transform: [{ translateY: -6 }],
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 5,

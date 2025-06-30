@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, Text, ActivityIndicator, View, FlatList, ScrollView } from 'react-native';
+import { StyleSheet, Text, ActivityIndicator, View, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/ui/Header';
 import SearchBar from '../../components/ui/SearchBar';
 import { api } from '@/services/api';
 import { Curso, Receta } from '@/utils/types';
 import SearchResult from '@/components/SearchResult';
+import Tabs from '@/components/ui/Tabs';
 
 // Types for API response
 interface SearchResultApi {
@@ -165,32 +166,15 @@ export default function BusquedaScreen() {
       <SearchBar 
         value={searchQuery}
         onChangeText={setSearchQuery}
+        style={{ marginVertical: 16 }}
       />
 
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterTabs}
-        contentContainerStyle={styles.filterTabsContent}
-      >
-        {filters.map((filter) => (
-          <TouchableOpacity
-            key={filter}
-            style={[
-              styles.filterTab,
-              activeFilter === filter && styles.activeFilterTab
-            ]}
-            onPress={() => setActiveFilter(filter)}
-          >
-            <Text style={[
-              styles.filterText,
-              activeFilter === filter && styles.activeFilterText
-            ]}>
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Tabs */}
+      <Tabs
+        tabs={filters}
+        activeTab={filters.indexOf(activeFilter)}
+        onTabPress={(_, idx) => setActiveFilter(filters[idx])}
+      />
 
       <View style={styles.resultsContainer}>
         {renderResults()}
@@ -204,35 +188,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  filterTabs: {
-    marginVertical: 8,
-    flexGrow: 0
-  },
-  filterTabsContent: {
-    paddingHorizontal: 16,
-  },
-  filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 40,
-  },
-  activeFilterTab: {
-    backgroundColor: '#EE964B',
-  },
-  filterText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  activeFilterText: {
-    color: '#fff',
-    fontWeight: '500',
-  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -241,6 +196,7 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: '#888',
     fontSize: 16,
+    textAlign: 'center'
   },
   resultsContainer: {
     flex: 1,

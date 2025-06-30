@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ViewProps } from 'react-native';
 
-interface SectionHeaderProps {
+interface SectionHeaderProps extends ViewProps {
   title: string;
   showSeeMore?: boolean;
   onSeeMorePress?: () => void;
@@ -13,9 +13,11 @@ export default function SectionHeader({
   showSeeMore = true,
   onSeeMorePress,
   seeMoreText = "Ver mas",
+  style,
+  ...props
 }: SectionHeaderProps) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]} {...props}>
       <Text style={styles.title}>{title}</Text>
       {showSeeMore && (
         <TouchableOpacity onPress={onSeeMorePress}>
@@ -35,12 +37,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2F2F2F',
+    marginBottom: 8
   },
   seeMore: {
     color: '#888',
-    fontSize: 14,
+    fontSize: 16,
   },
 }); 

@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
-interface SearchBarProps {
+import { View, TextInput, StyleSheet, ViewProps } from 'react-native';
+interface SearchBarProps extends ViewProps {
   placeholder?: string;
   value?: string;
   onChangeText?: (text: string) => void;
@@ -10,9 +10,11 @@ export default function SearchBar({
   placeholder = "Buscar recetas, cursos, ingredientes...",
   value,
   onChangeText,
+  style,
+  ...props
 }: SearchBarProps) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]} {...props}>
       <TextInput
         style={styles.input}
         placeholder={placeholder}
@@ -40,6 +42,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
+    paddingVertical: 2,
     color: '#2F2F2F',
   },
 }); 

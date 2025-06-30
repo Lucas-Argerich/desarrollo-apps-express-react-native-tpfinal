@@ -29,6 +29,7 @@ type CourseEndpoints =
   | '/courses'
   | '/courses/:id'
   | '/courses/:id/register'
+  | '/courses/user/subscribed'
 
 type ResourceEndpoints = 
   | '/resources/ingredients'
@@ -37,7 +38,7 @@ type ResourceEndpoints =
 type SearchEndpoints = 
   | '/search'
 
-type ApiEndpoints = AuthEndpoints | RecipeEndpoints | CourseEndpoints | ResourceEndpoints | SearchEndpoints
+export type ApiEndpoints = AuthEndpoints | RecipeEndpoints | CourseEndpoints | ResourceEndpoints | SearchEndpoints
 
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 

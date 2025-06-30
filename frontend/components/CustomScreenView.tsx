@@ -1,12 +1,21 @@
-import { ScrollView, ViewProps } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, View, ViewProps } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
-export default function CustomScreenView({ children, ...props }: { children: React.ReactNode } & ViewProps) {
+export default function CustomScreenView({
+  children,
+  noScroll = false,
+  ...props
+}: { children: React.ReactNode; noScroll?: boolean } & ViewProps) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} {...props}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {children}
-      </ScrollView>
+      {noScroll ? (
+        children
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {children}
+          <View style={{ marginBottom: 120 }} />
+        </ScrollView>
+      )}
     </SafeAreaView>
-  );
+  )
 }

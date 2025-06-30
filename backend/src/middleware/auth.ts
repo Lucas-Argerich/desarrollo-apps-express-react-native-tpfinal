@@ -21,6 +21,7 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
 
     const user = await prisma.usuario.findUnique({
       where: { idUsuario: decoded.id },
+      omit: { password: true },
       include: { alumno: true }
     });
 

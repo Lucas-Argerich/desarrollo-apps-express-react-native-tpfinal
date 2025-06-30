@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons'
 import { BlurView } from 'expo-blur'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native'
 
 type HeroProps = {
@@ -11,15 +11,19 @@ type HeroProps = {
 } & (
   | { isSaved: undefined; toggleSaved: undefined }
   | {
-      isSaved: boolean
+      isSaved: boolean | null
       toggleSaved: () => Promise<void>
     }
 )
 
 export default function Hero({ image, state, isSaved, toggleSaved, children }: HeroProps) {
-  const [isLoadingSave, setIsLoadingSave] = useState(false)
+  const [isLoadingSave, setIsLoadingSave] = useState(true)
   const [contentHeight, setContentHeight] = useState(200)
   const heroHeight = state === 'open' ? 400 : contentHeight + 100
+
+  useEffect(() => {
+    setIsLoadingSave(isSaved === null)
+  }, [isSaved])
 
   const handleToggle = () => {
     if (isLoadingSave || !toggleSaved) return
@@ -40,7 +44,7 @@ export default function Hero({ image, state, isSaved, toggleSaved, children }: H
         {isSaved !== undefined && (
           <TouchableOpacity activeOpacity={0.9} onPress={handleToggle} disabled={isLoadingSave}>
             <BlurView intensity={40} style={styles.bubble}>
-              <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={20} color="#fff" />
+              <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={20} style={{ opacity: isLoadingSave ? 0.4 : 1 }} color="#fff" />
             </BlurView>
           </TouchableOpacity>
         )}

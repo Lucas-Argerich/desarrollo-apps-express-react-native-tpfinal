@@ -9,7 +9,7 @@ interface RecetaContextType {
   setLoading: (loading: boolean) => void
   servings: number | null
   setServings: (servings: number | null) => void
-  isFavorite: boolean
+  isFavorite: boolean | null
   setIsFavorite: (isFavorite: boolean) => void
   toggleFavorite: () => Promise<void>
   checkFavoriteStatus: (recipeId: string) => Promise<void>
@@ -21,7 +21,7 @@ export function RecetaProvider({ children }: { children: ReactNode }) {
   const [receta, setReceta] = useState<Receta | null>(null)
   const [loading, setLoading] = useState(true)
   const [servings, setServings] = useState<number | null>(null)
-  const [isFavorite, setIsFavorite] = useState(false)
+  const [isFavorite, setIsFavorite] = useState<boolean | null>(null)
 
   const checkFavoriteStatus = async (recipeId: string) => {
     try {

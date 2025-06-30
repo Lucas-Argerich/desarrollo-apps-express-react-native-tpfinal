@@ -23,6 +23,8 @@ export interface User {
   id: string
   email: string
   nombre: string
+  nickname: string
+  avatar: string
   token: string
   rol: string
 }
@@ -46,6 +48,8 @@ export const authService = {
         id: data.id,
         email: data.mail,
         nombre: data.nombre,
+        nickname: data.nickname,
+        avatar: data.avatar,
         token: data.token,
         rol: data.rol
       }

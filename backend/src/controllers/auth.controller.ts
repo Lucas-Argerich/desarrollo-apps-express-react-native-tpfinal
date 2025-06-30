@@ -278,7 +278,9 @@ export const login = async (req: AuthRequest, res: Response) => {
     res.json({
       idUsuario: user.idUsuario,
       nombre: user.nombre,
+      nickname: user.nickname,
       mail: user.mail,
+      avatar: user.avatar,
       token,
       rol: user.alumno ? 'alumno' : 'profesor',
     });
@@ -296,6 +298,7 @@ export const getUser = async (req: AuthRequest, res: Response) => {
 
     const user = await prisma.usuario.findUnique({
       where: { idUsuario: req.user.idUsuario },
+      omit: { password: true },
       include: { alumno: true },
     });
 
