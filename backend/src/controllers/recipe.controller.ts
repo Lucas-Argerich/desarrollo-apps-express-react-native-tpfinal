@@ -2,8 +2,13 @@ import { Response } from 'express'
 import { Prisma, PrismaClient } from '@prisma/client'
 import { AuthRequest } from '../types'
 import { RecipeCreateInput, ReviewCreateInput } from '../types'
+import { createClient } from '@supabase/supabase-js'
 
 const prisma = new PrismaClient()
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_KEY || ''
+)
 
 interface RecipeQuery {
   limit?: string
@@ -117,12 +122,37 @@ export const createRecipe = async (req: AuthRequest, res: Response) => {
 
     const recipeData: RecipeCreateInput = req.body
 
+    let fotoPrincipalUrl = recipeData.fotoPrincipal;
+    let file = undefined;
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const imgField = files['fotoPrincipal'];
+      if (imgField) {
+        file = Array.isArray(imgField) ? imgField[0] : imgField;
+      }
+    }
+    if (file) {
+      const ext = file.originalname.split('.').pop();
+      const fileName = `recetas/${Date.now()}.${ext}`;
+      const { data, error } = await supabase.storage.from('uploads').upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true
+      });
+      if (error) {
+        res.status(500).json({ error: 'Error al subir imagen' });
+        return;
+      }
+      const { data: publicUrlData } = supabase.storage.from('uploads').getPublicUrl(data.path);
+      fotoPrincipalUrl = publicUrlData.publicUrl;
+    }
+
     const receta = await prisma.receta.create({
       data: {
         nombreReceta: recipeData.nombreReceta,
         descripcionReceta: recipeData.descripcionReceta,
         porciones: recipeData.porciones,
         cantidadPersonas: recipeData.cantidadPersonas,
+        fotoPrincipal: fotoPrincipalUrl,
         utilizados: {
           create: [
             ...recipeData.ingredientes.filter((f) => f.nombre !== undefined).map((ing) => ({
