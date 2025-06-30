@@ -8,7 +8,7 @@ import Hero from '@/components/ui/Hero'
 import ActionButton from '@/components/ui/ActionButton'
 
 export default function RecetaPasosScreen() {
-  const { receta } = useReceta()
+  const { receta, isFavorite, toggleFavorite } = useReceta()
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
 
   if (!receta) {
@@ -41,7 +41,7 @@ export default function RecetaPasosScreen() {
   if (sortedSteps.length === 0) {
     return (
       <CustomScreenView style={styles.container}>
-        <Hero image={receta.fotoPrincipal} state="closed">
+        <Hero image={receta.fotoPrincipal} state="closed" isSaved={isFavorite} toggleSaved={toggleFavorite}>
           <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
             {receta.nombreReceta}
           </Text>
@@ -69,7 +69,7 @@ export default function RecetaPasosScreen() {
   return (
     <>
       <CustomScreenView style={styles.container}>
-        <Hero image={receta.fotoPrincipal} state="closed">
+        <Hero image={receta.fotoPrincipal} state="closed" isSaved={isFavorite} toggleSaved={toggleFavorite}>
           <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
             {receta.nombreReceta}
           </Text>
@@ -78,7 +78,7 @@ export default function RecetaPasosScreen() {
               <Text style={{ fontSize: 12, fontStyle: 'italic' }}>De</Text> {receta.usuario.nombre}
             </Text>
             <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-              <Text style={{ color: '#fff', fontSize: 16 }}>{receta.calificaciones.length}</Text>
+              <Text style={{ color: '#fff', fontSize: 16 }}>{receta.calificacion.toFixed(1)}</Text>
               <Ionicons name="star" size={16} color="#fff" />
             </View>
           </View>
@@ -133,22 +133,20 @@ export default function RecetaPasosScreen() {
         {/* Ingredients Section */}
         <Text style={styles.sectionTitle}>Ingredientes</Text>
         <View style={styles.ingredientsGrid}>
-          {receta.utilizados
-            ?.filter((item) => item.ingrediente)
-            .map((item) => (
-              <View key={item.idUtilizado} style={styles.ingredientCard}>
-                <Image
-                  source={{ uri: 'https://picsum.photos/113/93' }}
-                  style={styles.ingredientImage}
-                />
-                <View style={styles.ingredientInfo}>
-                  <Text style={styles.ingredientName}>{item.ingrediente?.nombre}</Text>
-                  <Text style={styles.ingredientAmount}>
-                    {item.cantidad} {item.unidad.descripcion}
-                  </Text>
-                </View>
+          {receta.ingredientes?.map((item) => (
+            <View key={item.idUtilizado} style={styles.ingredientCard}>
+              <Image
+                source={{ uri: 'https://picsum.photos/113/93' }}
+                style={styles.ingredientImage}
+              />
+              <View style={styles.ingredientInfo}>
+                <Text style={styles.ingredientName}>{item.nombre}</Text>
+                <Text style={styles.ingredientAmount}>
+                  {item.cantidad} {item.unidad}
+                </Text>
               </View>
-            ))}
+            </View>
+          ))}
         </View>
       </CustomScreenView>
       {isLastStep && (

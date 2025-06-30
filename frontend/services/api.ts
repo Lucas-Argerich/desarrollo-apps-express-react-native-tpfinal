@@ -21,6 +21,9 @@ type RecipeEndpoints =
   | '/recipes'
   | '/recipes/:id'
   | '/recipes/:id/reviews'
+  | '/recipes/:id/favorites'
+  | '/recipes/:id/favorites/check'
+  | '/recipes/user/favorites'
 
 type CourseEndpoints = 
   | '/courses'

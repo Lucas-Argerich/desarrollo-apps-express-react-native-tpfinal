@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import CustomScreenView from '@/components/CustomScreenView'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -10,7 +10,34 @@ import { useReceta } from '@/contexts/RecetaContext'
 
 export default function RecetaScreen() {
   const { recetaId: id } = useLocalSearchParams()
-  const { receta, setReceta, loading, setLoading, servings, setServings } = useReceta()
+  const { receta, setReceta, loading, setLoading, servings, setServings, isFavorite, toggleFavorite, checkFavoriteStatus } = useReceta()
+
+  // Calculate scaled ingredients based on current servings
+  const getScaledIngredients = () => {
+    if (!receta || !servings) return []
+
+    const scaleFactor = servings / receta.cantidadPersonas
+    return (
+      receta.ingredientes?.map((item) => ({
+        ...item,
+        cantidad: Math.round(item.cantidad * scaleFactor * 100) / 100 // Round to 2 decimal places
+      })) || []
+    )
+  }
+
+  // Calculate scaled utensils based on current servings
+  const getScaledUtensils = () => {
+    if (!receta || !servings) return []
+
+    // Por ahora 1. No escalan los utencilios.
+    const scaleFactor = 1
+    return (
+      receta.utencilios?.map((item) => ({
+        ...item,
+        cantidad: Math.round(item.cantidad * scaleFactor * 100) / 100 // Round to 2 decimal places
+      })) || []
+    )
+  }
 
   useEffect(() => {
     if (id && !receta) {
@@ -22,13 +49,15 @@ export default function RecetaScreen() {
           setReceta(data)
           setServings(data.cantidadPersonas)
           setLoading(false)
+          // Check favorite status after loading recipe
+          checkFavoriteStatus(recipeId)
         })
         .catch((error) => {
           console.error('Error fetching recipe:', error)
           setLoading(false)
         })
     }
-  }, [id, receta, setReceta, setServings, setLoading])
+  }, [id, receta, setReceta, setServings, setLoading, checkFavoriteStatus])
 
   if (loading) {
     return (
@@ -54,7 +83,7 @@ export default function RecetaScreen() {
     <>
       <CustomScreenView style={styles.container}>
         {/* Hero Image */}
-        <Hero image={receta.fotoPrincipal} state="open">
+        <Hero image={receta.fotoPrincipal} state="open" isSaved={isFavorite} toggleSaved={toggleFavorite}>
           <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
             {receta.nombreReceta}
           </Text>
@@ -63,7 +92,7 @@ export default function RecetaScreen() {
               <Text style={{ fontSize: 12, fontStyle: 'italic' }}>De</Text> {receta.usuario.nombre}
             </Text>
             <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-              <Text style={{ color: '#fff', fontSize: 16 }}>{receta.calificaciones.length}</Text>
+              <Text style={{ color: '#fff', fontSize: 16 }}>{receta.calificacion.toFixed(1)}</Text>
               <Ionicons name="star" size={16} color="#fff" />
             </View>
           </View>
@@ -100,55 +129,13 @@ export default function RecetaScreen() {
               <View style={styles.iconContainer}>
                 <Ionicons name="star" size={16} color="#7E7E7E" />
               </View>
-              <Text style={styles.infoText}>{receta.calificaciones?.length}</Text>
+              <Text style={styles.infoText}>{receta.calificacion.toFixed(1)}</Text>
             </View>
           </View>
         </View>
 
         {/* Description */}
         <Text style={styles.description}>{receta.descripcionReceta}</Text>
-
-        {/* Ingredients */}
-        <Text style={styles.sectionTitle}>Ingredientes</Text>
-        <View style={styles.ingredientsGrid}>
-          {receta.utilizados
-            ?.filter((item) => item.ingrediente)
-            .map((item) => (
-              <View key={item.idUtilizado} style={styles.ingredientCard}>
-                <Image
-                  source={{ uri: 'https://picsum.photos/113/93' }}
-                  style={styles.ingredientImage}
-                />
-                <View style={styles.ingredientInfo}>
-                  <Text style={styles.ingredientName}>{item.ingrediente?.nombre}</Text>
-                  <Text style={styles.ingredientAmount}>
-                    {item.cantidad} {item.unidad.descripcion}
-                  </Text>
-                </View>
-              </View>
-            ))}
-        </View>
-
-        {/* Ingredients */}
-        <Text style={styles.sectionTitle}>Utencilios</Text>
-        <View style={styles.ingredientsGrid}>
-          {receta.utilizados
-            ?.filter((item) => item.utencilio)
-            .map((item) => (
-              <View key={item.idUtilizado} style={styles.ingredientCard}>
-                <Image
-                  source={{ uri: 'https://picsum.photos/113/93' }}
-                  style={styles.ingredientImage}
-                />
-                <View style={styles.ingredientInfo}>
-                  <Text style={styles.ingredientName}>{item.ingrediente?.nombre}</Text>
-                  <Text style={styles.ingredientAmount}>
-                    {item.cantidad} {item.unidad.descripcion}
-                  </Text>
-                </View>
-              </View>
-            ))}
-        </View>
 
         {/* Servings Counter */}
         <View style={styles.servingsContainer}>
@@ -177,20 +164,84 @@ export default function RecetaScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Ingredients */}
+        <Text style={styles.sectionTitle}>
+          Ingredientes
+          {(servings ?? 0) !== receta.cantidadPersonas && servings && (
+            <Text style={styles.scaledIndicator}>
+              {' '}
+              (ajustado para {servings} persona{servings > 1 ? 's' : ''})
+            </Text>
+          )}
+        </Text>
+        <FlatList
+          data={getScaledIngredients()}
+          keyExtractor={(item) => item.idUtilizado.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalList}
+          renderItem={({ item }) => (
+            <View style={styles.ingredientCard}>
+              <Image
+                source={{ uri: 'https://picsum.photos/113/93' }}
+                style={styles.ingredientImage}
+              />
+              <View style={styles.ingredientInfo}>
+                <Text style={styles.ingredientName}>{item.nombre}</Text>
+                <Text style={styles.ingredientAmount}>
+                  {item.cantidad} {item.unidad}
+                </Text>
+              </View>
+            </View>
+          )}
+        />
+
+        {/* Utensils */}
+        <Text style={styles.sectionTitle}>
+          Utencilios
+          {(servings ?? 0) !== receta.cantidadPersonas && servings && (
+            <Text style={styles.scaledIndicator}>
+              {' '}
+              (ajustado para {servings} persona{servings > 1 ? 's' : ''})
+            </Text>
+          )}
+        </Text>
+        <FlatList
+          data={getScaledUtensils()}
+          keyExtractor={(item) => item.idUtilizado.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalList}
+          renderItem={({ item }) => (
+            <View style={styles.ingredientCard}>
+              <Image
+                source={{ uri: 'https://picsum.photos/113/93' }}
+                style={styles.ingredientImage}
+              />
+              <View style={styles.ingredientInfo}>
+                <Text style={styles.ingredientName}>{item.nombre}</Text>
+                <Text style={styles.ingredientAmount}>
+                  {item.cantidad} {item.unidad}
+                </Text>
+              </View>
+            </View>
+          )}
+        />
+
         {/* Reviews */}
         <Text style={styles.sectionTitle}>Opiniones</Text>
         {receta.calificaciones?.length > 0 ? (
           receta.calificaciones.map((review, index) => (
             <View key={index} style={styles.reviewCard}>
-              <Text style={styles.reviewText}>Review {index + 1}</Text>
+              <Text style={styles.reviewText}>{review.comentario}</Text>
               <View style={styles.reviewFooter}>
                 <View style={styles.starsContainer}>
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(review.calificacion)].map((_, i) => (
                     <Ionicons key={i} name="star" size={16} color="#FFD700" />
                   ))}
                 </View>
                 <View style={styles.reviewDivider} />
-                <Text style={styles.reviewAuthor}>Usuario</Text>
+                <Text style={styles.reviewAuthor}>{review.usuario?.nombre}</Text>
               </View>
             </View>
           ))
@@ -295,7 +346,8 @@ const styles = StyleSheet.create({
     height: 177,
     backgroundColor: 'rgba(238,150,75,0.6)',
     borderRadius: 16,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    marginRight: 16
   },
   ingredientImage: {
     width: '100%',
@@ -322,8 +374,8 @@ const styles = StyleSheet.create({
   servingsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24
+    marginTop: 24,
+    marginLeft: 24
   },
   servingsButton: {
     width: 48,
@@ -440,5 +492,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 16,
     marginBottom: 12
+  },
+  scaledIndicator: {
+    color: '#7E7E7E',
+    fontFamily: 'Roboto',
+    fontWeight: '500',
+    fontSize: 14,
+    marginLeft: 8
+  },
+  horizontalList: {
+    paddingHorizontal: 28,
+    gap: 4
   }
 })

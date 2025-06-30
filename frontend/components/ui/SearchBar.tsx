@@ -1,21 +1,15 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
+import { View, TextInput, StyleSheet } from 'react-native';
 interface SearchBarProps {
   placeholder?: string;
   value?: string;
   onChangeText?: (text: string) => void;
-  onFilterPress?: () => void;
-  showFilter?: boolean;
 }
 
 export default function SearchBar({
   placeholder = "Buscar recetas, cursos, ingredientes...",
   value,
   onChangeText,
-  onFilterPress,
-  showFilter = true,
 }: SearchBarProps) {
   return (
     <View style={styles.container}>
@@ -26,11 +20,6 @@ export default function SearchBar({
         value={value}
         onChangeText={onChangeText}
       />
-      {showFilter && (
-        <TouchableOpacity onPress={onFilterPress}>
-          <Ionicons name="options-outline" size={22} color="#B0B0B0" />
-        </TouchableOpacity>
-      )}
     </View>
   );
 }

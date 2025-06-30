@@ -11,7 +11,7 @@ export default function RecetaPuntuacionScreen() {
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [isPublishing, setIsPublishing] = useState(false)
-  const { receta } = useReceta()
+  const { receta, isFavorite, toggleFavorite } = useReceta()
 
   const handlePublishReview = async () => {
     if (rating === 0) {
@@ -42,7 +42,7 @@ export default function RecetaPuntuacionScreen() {
           [
             {
               text: 'Volver al Inicio',
-              onPress: () => router.push('/')
+              onPress: () => router.dismissTo('/')
             }
           ]
         )
@@ -68,14 +68,14 @@ export default function RecetaPuntuacionScreen() {
 
   return (
     <CustomScreenView>
-      <Hero image={receta.fotoPrincipal} state="closed">
+      <Hero image={receta.fotoPrincipal} state="closed" isSaved={isFavorite} toggleSaved={toggleFavorite}>
         <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>{receta.nombreReceta}</Text>
         <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
           <Text style={{ color: '#fff', fontSize: 16 }}>
             <Text style={{ fontSize: 12, fontStyle: 'italic' }}>De</Text> {receta.usuario.nombre}
           </Text>
           <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-            <Text style={{ color: '#fff', fontSize: 16 }}>{receta.calificaciones.length}</Text>
+            <Text style={{ color: '#fff', fontSize: 16 }}>{receta.calificacion.toFixed(1)}</Text>
             <Ionicons name="star" size={16} color="#fff" />
           </View>
         </View>
@@ -138,14 +138,14 @@ export default function RecetaPuntuacionScreen() {
       <View style={styles.actionButtonsContainer}>
         <TouchableOpacity 
           style={styles.actionButton} 
-          onPress={() => router.push('/')}
+          onPress={() => router.dismissTo('/')}
           disabled={isPublishing}
         >
           <Text style={styles.actionButtonText}>Volver al Inicio</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => router.push(`/receta/${receta.idReceta}/pasos`)}
+          onPress={() => router.dismissAll()}
           disabled={isPublishing}
         >
           <Text style={styles.actionButtonText}>Rehacer la Receta</Text>

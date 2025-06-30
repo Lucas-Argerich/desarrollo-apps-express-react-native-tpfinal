@@ -74,7 +74,6 @@ export default function BusquedaScreen() {
         if (abortControllerRef.current?.signal.aborted) {
           return;
         }
-        console.log(data);
         setResults(data);
         setLoading(false);
       })
@@ -166,7 +165,6 @@ export default function BusquedaScreen() {
       <SearchBar 
         value={searchQuery}
         onChangeText={setSearchQuery}
-        onFilterPress={() => {}}
       />
 
       <ScrollView 
