@@ -353,6 +353,40 @@ export const checkFavorite = async (req: AuthRequest, res: Response) => {
   }
 }
 
+export const getCreatedRecipes = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' })
+      return
+    }
+    const { limit = '10', offset = '0' }: RecipeQuery = req.query
+    const recipes = await prisma.receta.findMany({
+      where: { idUsuario: req.user.idUsuario },
+      take: Number(limit),
+      skip: Number(offset),
+      include: {
+        utilizados: {
+          include: {
+            ingrediente: true,
+            utencilio: true,
+            unidad: true
+          }
+        },
+        tipo: true,
+        pasos: true,
+        calificaciones: {
+          include: { usuario: true }
+        },
+        usuario: true
+      },
+      orderBy: { idReceta: 'desc' }
+    })
+    res.json(recipes.map(recipeParse))
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener recetas creadas' })
+  }
+}
+
 export function recipeParse(
   recipe: Partial<
     Prisma.RecetaGetPayload<{

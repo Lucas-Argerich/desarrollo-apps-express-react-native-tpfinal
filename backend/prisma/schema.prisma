@@ -24,6 +24,7 @@ model Usuario {
   recetas             Receta[]
   calificaciones      Calificacion[]
   codigosVerificacion CodigosVerificacion[]
+  cursosCreados       Curso[]               @relation("CursosCreados")
 }
 
 model Alumno {
@@ -165,6 +166,8 @@ model Curso {
   duracion       Int?
   precio         Decimal?          @db.Decimal(12, 2)
   modalidad      String            @db.VarChar(20)
+  idUsuario      Int               @default(1)
+  usuario        Usuario           @relation("CursosCreados", fields: [idUsuario], references: [idUsuario]) // NEW: Relation to Usuario
   cronogramas    CronogramaCurso[]
   cursoExtra     CursoExtra?
   modulos        Modulo[]

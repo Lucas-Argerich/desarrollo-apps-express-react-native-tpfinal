@@ -111,3 +111,24 @@ export interface Modulo {
   duracion?: number | null
   video?: string | null
 }
+
+// Course types
+export interface CourseCreateInput {
+  descripcion?: string;
+  contenidos?: string;
+  requerimientos?: string;
+  duracion?: number;
+  precio?: number;
+  modalidad: string;
+  titulo?: string;
+  dificultad?: string;
+  modulos?: ModuleCreateInput[];
+}
+
+export interface ModuleCreateInput {
+  titulo: string;
+  orden: number;
+  contenido?: string;
+  duracion?: number;
+  video?: string;
+}

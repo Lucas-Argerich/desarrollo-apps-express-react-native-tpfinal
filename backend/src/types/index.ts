@@ -102,7 +102,6 @@ export interface CourseCreateInput {
   modalidad: string;
   titulo?: string;
   dificultad?: string;
-  imagen?: string;
   modulos?: ModuleCreateInput[];
 }
 

@@ -24,12 +24,14 @@ type RecipeEndpoints =
   | '/recipes/:id/favorites'
   | '/recipes/:id/favorites/check'
   | '/recipes/user/favorites'
+  | '/recipes/user/created'
 
 type CourseEndpoints = 
   | '/courses'
   | '/courses/:id'
   | '/courses/:id/register'
   | '/courses/user/subscribed'
+  | '/courses/user/created'
 
 type ResourceEndpoints = 
   | '/resources/ingredients'

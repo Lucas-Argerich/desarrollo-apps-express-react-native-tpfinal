@@ -41,11 +41,12 @@ export default function Button({
 const styles = StyleSheet.create({
   button: {
     backgroundColor: '#EE964B',
-    borderRadius: 20,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    paddingVertical: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     shadowOffset: { width: 0, height: 13 },
     shadowOpacity: 0.12,
     shadowRadius: 26,
@@ -55,7 +56,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5CBA7',
   },
   buttonText: {
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: 'Roboto',
     color: '#FFFFFF',
     textAlign: 'center',

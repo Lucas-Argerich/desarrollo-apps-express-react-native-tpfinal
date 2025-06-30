@@ -2,8 +2,13 @@ import { Response } from 'express';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
 import { CourseCreateInput } from '../types';
-
+import { createClient } from '@supabase/supabase-js';
 const prisma = new PrismaClient();
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_KEY || ''
+);
 
 interface CourseQuery {
   limit?: string;
@@ -79,6 +84,30 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
     }
 
     const courseData: CourseCreateInput = req.body;
+    let imagenUrl = (courseData as any).imagen;
+    let file = undefined;
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+      const imgField = files['imagen'];
+      if (imgField) {
+        file = Array.isArray(imgField) ? imgField[0] : imgField;
+      }
+    }
+    if (file) {
+      const ext = file.originalname.split('.').pop();
+      const fileName = `cursos/${Date.now()}.${ext}`;
+      const { data, error } = await supabase.storage.from('uploads').upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: true
+      });
+      if (error) {
+        res.status(500).json({ error: 'Error al subir imagen' });
+        return
+      }
+      const { data: publicUrlData } = supabase.storage.from('uploads').getPublicUrl(data.path);
+      imagenUrl = publicUrlData.publicUrl;
+    }
 
     const curso = await prisma.curso.create({
       data: {
@@ -91,7 +120,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
         cursoExtra: {
           create: {
             titulo: courseData.titulo,
-            imagen: courseData.imagen,
+            imagen: imagenUrl,
             dificultad: courseData.dificultad
           }
         },
@@ -111,6 +140,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
       status: 'active',
     });
   } catch (error) {
+    console.error(error)
     res.status(500).json({ error: 'Error al crear curso' });
   }
 };
@@ -233,6 +263,35 @@ export const getSubscribedCourses = async (req: AuthRequest, res: Response) => {
     res.json(cursos.map(courseParse));
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener cursos inscritos' });
+  }
+}
+
+export const getCreatedCourses = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+    const { limit = '10', offset = '0' }: CourseQuery = req.query;
+    const cursos = await prisma.curso.findMany({
+      where: { idUsuario: req.user.idUsuario },
+      take: Number(limit),
+      skip: Number(offset),
+      include: {
+        cursoExtra: true,
+        cronogramas: {
+          include: {
+            asistencias: {
+              include: { alumno: true },
+              distinct: ['idAlumno']
+            }
+          }
+        }
+      }
+    });
+    res.json(cursos.map(courseParse));
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener cursos creados' });
   }
 }
 
