@@ -11,7 +11,7 @@
     "dev": "concurrently --no-buffer --raw \"pnpm dev:frontend\" \"pnpm dev:backend\"",
     "dev:frontend": "cd frontend && pnpm start",
     "dev:backend": "cd backend && pnpm dev",
-    "install": "npm install && cd backend && npm install && cd ../frontend && npm install"
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   },
   "keywords": [],
   "author": "",
