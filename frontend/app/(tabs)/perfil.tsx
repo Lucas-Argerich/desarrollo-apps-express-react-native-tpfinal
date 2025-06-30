@@ -14,7 +14,7 @@ export default function PerfilScreen() {
   const [loading, setLoading] = useState(true)
   const [coursesLength, setCoursesLength] = useState<number>(0)
   const [recipesLength, setRecipesLength] = useState<number>(0)
-  const [statsLoading, setStatsLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(false)
 
   useEffect(() => {
     const fetchUser = async () => {
