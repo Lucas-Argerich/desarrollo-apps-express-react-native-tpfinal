@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList } from 'react-native'
+import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import CustomScreenView from '@/components/CustomScreenView'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -87,16 +87,30 @@ export default function RecetaScreen() {
 
   const handleDeleteRecipe = async () => {
     // Show confirmation dialog and delete recipe
-    if (confirm('¿Estás seguro de que quieres eliminar esta receta?')) {
-      try {
-        const recipeId = Array.isArray(id) ? id[0] : id
-        await api('/recipes/:id', 'DELETE', { params: { id: recipeId } })
-        router.back()
-      } catch (error) {
-        console.error('Error deleting recipe:', error)
-        alert('Error al eliminar la receta')
-      }
-    }
+    Alert.alert(
+      'Eliminar Receta',
+      '¿Estás seguro de que quieres eliminar esta receta?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const recipeId = Array.isArray(id) ? id[0] : id
+              await api('/recipes/:id', 'DELETE', { params: { id: recipeId } })
+              router.back()
+            } catch (error) {
+              console.error('Error deleting recipe:', error)
+              Alert.alert('Error', 'Error al eliminar la receta')
+            }
+          }
+        }
+      ]
+    )
   }
 
   if (loading) {

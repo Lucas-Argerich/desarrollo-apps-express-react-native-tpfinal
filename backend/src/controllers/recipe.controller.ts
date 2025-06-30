@@ -560,6 +560,60 @@ export const updateRecipe = async (req: AuthRequest, res: Response) => {
   }
 }
 
+export const deleteRecipe = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' })
+      return
+    }
+
+    const recipeId = Number(req.params.id)
+
+    // Check if recipe exists and user owns it
+    const existingRecipe = await prisma.receta.findUnique({
+      where: { idReceta: recipeId },
+      include: { usuario: true }
+    })
+
+    if (!existingRecipe) {
+      res.status(404).json({ error: 'Receta no encontrada' })
+      return
+    }
+
+    if (existingRecipe.idUsuario !== req.user.idUsuario) {
+      res.status(403).json({ error: 'No tienes permisos para eliminar esta receta' })
+      return
+    }
+
+    // Delete all related data in the correct order
+    await prisma.favorito.deleteMany({
+      where: { idReceta: recipeId }
+    })
+
+    await prisma.calificacion.deleteMany({
+      where: { idReceta: recipeId }
+    })
+
+    await prisma.utilizado.deleteMany({
+      where: { idReceta: recipeId }
+    })
+
+    await prisma.paso.deleteMany({
+      where: { idReceta: recipeId }
+    })
+
+    // Finally delete the recipe
+    await prisma.receta.delete({
+      where: { idReceta: recipeId }
+    })
+
+    res.json({ message: 'Receta eliminada correctamente' })
+  } catch (error) {
+    console.error('Error deleting recipe:', error)
+    res.status(500).json({ error: 'Error al eliminar la receta' })
+  }
+}
+
 export function recipeParse(
   recipe: Partial<
     Prisma.RecetaGetPayload<{
