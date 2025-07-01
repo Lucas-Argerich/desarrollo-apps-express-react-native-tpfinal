@@ -211,7 +211,7 @@ export const authService = {
       throw new Error(error.error || 'Error al convertir a estudiante')
     } else {
       const data = await response.json()
-      console.log(data)
+
       await AsyncStorage.setItem('token', data.token)
       await AsyncStorage.setItem('user', JSON.stringify(data))
     }
