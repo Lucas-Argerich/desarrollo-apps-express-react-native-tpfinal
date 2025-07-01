@@ -7,7 +7,8 @@ import {
   registerForCourse,
   unregisterFromCourse,
   getSubscribedCourses,
-  getCreatedCourses
+  getCreatedCourses,
+  registerAttendance
 } from '../controllers/course.controller';
 import { auth, requireRole } from '../middleware/auth';
 
@@ -22,6 +23,7 @@ router.post('/', auth, requireRole(['profesor']), createCourse);
 router.delete('/:id', auth, requireRole(['profesor']), deleteCourse);
 router.post('/:id/register', auth, requireRole(['alumno']), registerForCourse);
 router.delete('/:id/register', auth, requireRole(['alumno']), unregisterFromCourse);
+router.post('/:id/attendance', auth, requireRole(['alumno']), registerAttendance);
 router.get('/user/subscribed', auth, requireRole(['alumno']), getSubscribedCourses);
 router.get('/user/created', auth, requireRole(['profesor']), getCreatedCourses);
 

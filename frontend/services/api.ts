@@ -32,6 +32,7 @@ type CourseEndpoints =
   | '/courses/:id/register'
   | '/courses/user/subscribed'
   | '/courses/user/created'
+  | '/courses/:id/attendance'
 
 type ResourceEndpoints = 
   | '/resources/ingredients'

@@ -563,3 +563,44 @@ export const deleteCourse = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Error al eliminar el curso' })
   }
 }
+
+export const registerAttendance = async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    res.status(401).json({ error: 'No autenticado' });
+    return;
+  }
+  try {
+    const idAlumno = req.user.idUsuario;
+    const idCurso = parseInt(req.params.id, 10);
+
+    // Find the latest cronograma for the course
+    const cronograma = await prisma.cronogramaCurso.findFirst({
+      where: { idCurso },
+      orderBy: { fechaInicio: 'desc' }
+    });
+    if (!cronograma) {
+      res.status(404).json({ error: 'No hay cronograma para este curso' });
+      return;
+    }
+
+    // Check if already registered
+    const existing = await prisma.asistenciaCurso.findFirst({
+      where: { idAlumno, idCronograma: cronograma.idCronograma }
+    });
+    if (existing) {
+      res.status(200).json({ message: 'Asistencia ya registrada' });
+      return;
+    }
+
+    await prisma.asistenciaCurso.create({
+      data: {
+        idAlumno,
+        idCronograma: cronograma.idCronograma,
+        fecha: new Date()
+      }
+    });
+    res.status(201).json({ message: 'Asistencia registrada' });
+  } catch (e) {
+    res.status(500).json({ error: 'Error registrando asistencia' });
+  }
+}

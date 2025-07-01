@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  Pressable,
+  Button
+} from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import CustomScreenView from '@/components/CustomScreenView'
 import { api } from '@/services/api'
@@ -11,11 +21,20 @@ import Hero from '@/components/ui/Hero'
 import { capitalize } from '@/utils'
 import { useCurso } from '../../../contexts/CursoContext'
 import IngredientUtensilList from '@/components/IngredientUtensilList'
+import QRCode from 'react-native-qrcode-svg'
+import { CameraView, Camera } from 'expo-camera'
 
 const Page = () => {
   const { course, user, isSubscribed, isCreator, loading } = useCurso()
   const { cursoId } = useLocalSearchParams()
   const [related, setRelated] = useState<Curso[] | null>(null)
+  const [qrModalVisible, setQrModalVisible] = useState(false)
+  const [scannerVisible, setScannerVisible] = useState(false)
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
+  const [scanned, setScanned] = useState(false)
+
+  // For QR code, encode courseId (or a unique attendance code if you want)
+  const qrValue = JSON.stringify({ courseId: course?.idCurso })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,6 +51,31 @@ const Page = () => {
     fetchData()
   }, [])
 
+  useEffect(() => {
+    if (scannerVisible) {
+      (async () => {
+        const { status } = await Camera.requestCameraPermissionsAsync()
+        setHasPermission(status === 'granted')
+      })()
+    }
+  }, [scannerVisible])
+
+  const handleBarcodeScanned = async ({ type, data }: { type: string, data: string }) => {
+    setScanned(true)
+    try {
+      const payload = JSON.parse(data)
+      if (payload.courseId) {
+        await api('/courses/:id/attendance', 'POST', { params: { id: payload.courseId } })
+        Alert.alert('Asistencia registrada', 'Tu asistencia fue registrada correctamente.')
+        setScannerVisible(false)
+      } else {
+        Alert.alert('QR inválido', 'El código escaneado no es válido.')
+      }
+    } catch (e) {
+      Alert.alert('QR inválido', 'El código escaneado no es válido.')
+    }
+  }
+
   const handleEnroll = async () => {
     if (!user) {
       Alert.alert('Error', 'Debes iniciar sesión para inscribirte en el curso')
@@ -40,10 +84,6 @@ const Page = () => {
 
     // Navigate to enrollment screen instead of direct enrollment
     router.push(`/curso/${cursoId}/inscripcion`)
-  }
-
-  const handleEditCourse = () => {
-    router.push(`/curso/${cursoId}/editar`)
   }
 
   const handleDeleteCourse = async () => {
@@ -104,7 +144,7 @@ const Page = () => {
         justifyContent: 'center',
         paddingVertical: 14,
         paddingHorizontal: 14,
-        gap: 8,
+        gap: 8
       }}
     >
       <Ionicons name="log-out-outline" size={20} color="#fff" />
@@ -132,154 +172,191 @@ const Page = () => {
   return (
     <>
       <CustomScreenView>
-      <Hero image={course.imagen ?? 'https://picsum.photos/id/374/462'} state="closed">
-        <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
-          {capitalize(course.titulo ?? '')}
-        </Text>
-        <View
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            position: 'relative'
-          }}
-        >
+        <Hero image={course.imagen ?? 'https://picsum.photos/id/374/462'} state="closed">
+          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
+            {capitalize(course.titulo ?? '')}
+          </Text>
           <View
-            style={[
-              {
-                display: 'flex',
-                flexDirection: 'row',
-                gap: 4
-              },
-              !isSubscribed ? { position: 'absolute', top: '-80%' } : {}
-            ]}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              position: 'relative'
+            }}
           >
-            <Text style={{ color: '#fff', fontSize: 16 }}>
-              {course.calificacion?.toFixed(1) ?? '4.8'}
-            </Text>
-            <Ionicons name="star" size={16} color="#fff" />
+            <View
+              style={[
+                {
+                  display: 'flex',
+                  flexDirection: 'row',
+                  gap: 4
+                },
+                !isSubscribed ? { position: 'absolute', top: '-80%' } : {}
+              ]}
+            >
+              <Text style={{ color: '#fff', fontSize: 16 }}>
+                {course.calificacion?.toFixed(1) ?? '4.8'}
+              </Text>
+              <Ionicons name="star" size={16} color="#fff" />
+            </View>
+            {!isSubscribed && (
+              <Text style={{ color: '#fff', fontSize: 24, fontWeight: 500 }}>${course.precio}</Text>
+            )}
           </View>
-          {!isSubscribed && (
-            <Text style={{ color: '#fff', fontSize: 24, fontWeight: 500 }}>${course.precio}</Text>
-          )}
-        </View>
-      </Hero>
+        </Hero>
 
-      {/* Owner Actions */}
-      {isCreator && (
-        <View style={styles.ownerActions}>
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteCourse}>
-            <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
-            <Text style={styles.deleteButtonText}>Eliminar</Text>
+        {/* Owner Actions */}
+        {isCreator && (
+          <View style={styles.ownerActions}>
+            <TouchableOpacity
+              style={[
+                styles.deleteButton,
+                { borderColor: '#4A90E2', backgroundColor: 'rgba(74,144,226,0.1)' }
+              ]}
+              onPress={() => setQrModalVisible(true)}
+            >
+              <Ionicons name="qr-code-outline" size={20} color="#4A90E2" />
+              <Text style={[styles.deleteButtonText, { color: '#4A90E2' }]}>
+                Generar QR de Asistencia
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteCourse}>
+              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+              <Text style={styles.deleteButtonText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Tabs */}
+        <View style={styles.tabsRow}>
+          <Text style={styles.tabActive}>Resumen</Text>
+          <Text style={styles.tabInactive}>Detalles</Text>
+        </View>
+
+        {/* Info row (match RecetaScreen style) */}
+        <View style={styles.infoContainer}>
+          <View style={styles.infoColumn}>
+            <View style={styles.infoItem}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="calendar-outline" size={16} color="#7E7E7E" />
+              </View>
+              <Text style={styles.infoText}>
+                {course.duracion ? `${course.duracion} semanas` : '6 semanas'}
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="time-outline" size={16} color="#7E7E7E" />
+              </View>
+              <Text style={styles.infoText}>2 horas/semana</Text>
+            </View>
+          </View>
+          <View style={styles.infoColumn}>
+            <View style={styles.infoItem}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="restaurant-outline" size={16} color="#7E7E7E" />
+              </View>
+              <Text style={styles.infoText}>{course.dificultad || 'intermedio'}</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="star" size={16} color="#7E7E7E" />
+              </View>
+              <Text style={styles.infoText}>{course.calificacion?.toFixed(1) || '4.8'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Description */}
+        <Text style={styles.description}>{course.descripcion}</Text>
+
+        {/* Contenido */}
+        <View style={styles.tabsRow}>
+          <Text style={styles.sectionTitle}>Contenido</Text>
+        </View>
+        <Text style={styles.contentDescription}>
+          Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede
+          a material digital.
+        </Text>
+        <View style={styles.modulesList}>
+          {course.modulos?.map((modulo, index) => (
+            <View key={index} style={styles.moduleItem}>
+              <Text style={styles.moduleNumber}>{index + 1}.</Text>
+              <Text style={styles.moduleTitle}>{capitalize(modulo.titulo)}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Darse de Baja button below Hero */}
+        {isSubscribed && <UnsubscribeButton />}
+
+        {/* QR Scanner for attendance */}
+        {isSubscribed && (
+          <TouchableOpacity
+            style={{
+              alignSelf: 'flex-start',
+              marginHorizontal: 16,
+              marginTop: 8,
+              backgroundColor: '#4A90E2',
+              borderRadius: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              gap: 8
+            }}
+            onPress={() => setScannerVisible(true)}
+          >
+            <Ionicons name="qr-code-outline" size={20} color="#fff" />
+            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
+              Escanear QR de Asistencia
+            </Text>
           </TouchableOpacity>
+        )}
+
+        {/* Ingredients */}
+        {course.ingredientes && course.ingredientes.length > 0 && (
+          <IngredientUtensilList
+            title="Ingredientes"
+            items={course.ingredientes.map((ing) => ({
+              idUtilizado: (ing as any).idUtilizado ?? 0,
+              nombre: (ing as any).nombre ?? '',
+              cantidad: (ing as any).cantidad ?? 1,
+              unidad: (ing as any).unidad ?? 'u',
+              observaciones: (ing as any).observaciones ?? ''
+            }))}
+          />
+        )}
+
+        {/* Utensils */}
+        {course.utencilios && course.utencilios.length > 0 && (
+          <IngredientUtensilList
+            title="Utencilios"
+            items={course.utencilios.map((ut) => ({
+              idUtilizado: (ut as any).idUtilizado ?? 0,
+              nombre: (ut as any).nombre ?? '',
+              cantidad: (ut as any).cantidad ?? 1,
+              unidad: (ut as any).unidad ?? 'u',
+              observaciones: (ut as any).observaciones ?? ''
+            }))}
+          />
+        )}
+
+        {/* Cursos Relacionados */}
+        <View style={styles.relatedHeaderRow}>
+          <Text style={styles.relatedTitle}>Cursos Relacionados</Text>
+          <Text style={styles.relatedSeeMore}>Ver mas</Text>
         </View>
-      )}
-
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        <Text style={styles.tabActive}>Resumen</Text>
-        <Text style={styles.tabInactive}>Detalles</Text>
-      </View>
-
-      {/* Info row (match RecetaScreen style) */}
-      <View style={styles.infoContainer}>
-        <View style={styles.infoColumn}>
-          <View style={styles.infoItem}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="calendar-outline" size={16} color="#7E7E7E" />
-            </View>
-            <Text style={styles.infoText}>
-              {course.duracion ? `${course.duracion} semanas` : '6 semanas'}
-            </Text>
-          </View>
-          <View style={styles.infoItem}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="time-outline" size={16} color="#7E7E7E" />
-            </View>
-            <Text style={styles.infoText}>2 horas/semana</Text>
-          </View>
-        </View>
-        <View style={styles.infoColumn}>
-          <View style={styles.infoItem}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="restaurant-outline" size={16} color="#7E7E7E" />
-            </View>
-            <Text style={styles.infoText}>{course.dificultad || 'intermedio'}</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="star" size={16} color="#7E7E7E" />
-            </View>
-            <Text style={styles.infoText}>{course.calificacion?.toFixed(1) || '4.8'}</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Description */}
-      <Text style={styles.description}>{course.descripcion}</Text>
-
-      {/* Contenido */}
-      <View style={styles.tabsRow}>
-        <Text style={styles.sectionTitle}>Contenido</Text>
-      </View>
-      <Text style={styles.contentDescription}>
-        Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede
-        a material digital.
-      </Text>
-      <View style={styles.modulesList}>
-        {course.modulos?.map((modulo, index) => (
-          <View key={index} style={styles.moduleItem}>
-            <Text style={styles.moduleNumber}>{index + 1}.</Text>
-            <Text style={styles.moduleTitle}>{capitalize(modulo.titulo)}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Darse de Baja button below Hero */}
-      {isSubscribed && <UnsubscribeButton />}
-
-      {/* Ingredients */}
-      {course.ingredientes && course.ingredientes.length > 0 && (
-        <IngredientUtensilList
-          title="Ingredientes"
-          items={course.ingredientes.map((ing) => ({
-            idUtilizado: (ing as any).idUtilizado ?? 0,
-            nombre: (ing as any).nombre ?? '',
-            cantidad: (ing as any).cantidad ?? 1,
-            unidad: (ing as any).unidad ?? 'u',
-            observaciones: (ing as any).observaciones ?? ''
-          }))}
+        <FlatList
+          data={related || []}
+          keyExtractor={(item, idx) => idx.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ marginBottom: 32, gap: 28 }}
+          renderItem={({ item }) => <CourseCard item={item} />}
+          style={{ marginLeft: 16 }}
         />
-      )}
-
-      {/* Utensils */}
-      {course.utencilios && course.utencilios.length > 0 && (
-        <IngredientUtensilList
-          title="Utencilios"
-          items={course.utencilios.map((ut) => ({
-            idUtilizado: (ut as any).idUtilizado ?? 0,
-            nombre: (ut as any).nombre ?? '',
-            cantidad: (ut as any).cantidad ?? 1,
-            unidad: (ut as any).unidad ?? 'u',
-            observaciones: (ut as any).observaciones ?? ''
-          }))}
-        />
-      )}
-
-      {/* Cursos Relacionados */}
-      <View style={styles.relatedHeaderRow}>
-        <Text style={styles.relatedTitle}>Cursos Relacionados</Text>
-        <Text style={styles.relatedSeeMore}>Ver mas</Text>
-      </View>
-      <FlatList
-        data={related || []}
-        keyExtractor={(item, idx) => idx.toString()}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ marginBottom: 32, gap: 28 }}
-        renderItem={({ item }) => <CourseCard item={item} />}
-        style={{ marginLeft: 16 }}
-      />
       </CustomScreenView>
 
       {/* Conditional Action Button */}
@@ -298,6 +375,80 @@ const Page = () => {
           </ActionButton>
         </View>
       )}
+
+      {/* QR Modal for owner */}
+      <Modal
+        visible={qrModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setQrModalVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}
+        >
+          <View
+            style={{ backgroundColor: '#fff', borderRadius: 16, padding: 32, alignItems: 'center' }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>
+              QR de Asistencia
+            </Text>
+            <QRCode value={qrValue} size={220} />
+            <Pressable
+              onPress={() => setQrModalVisible(false)}
+              style={{ marginTop: 24, padding: 12 }}
+            >
+              <Text style={{ color: '#4A90E2', fontWeight: 'bold', fontSize: 16 }}>Cerrar</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+      {/* QR Scanner Modal for students */}
+      <Modal
+        visible={scannerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setScannerVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.9)',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}
+        >
+          {hasPermission === null ? (
+            <Text style={{ color: '#fff' }}>Solicitando permiso de cámara...</Text>
+          ) : hasPermission === false ? (
+            <Text style={{ color: '#fff' }}>No se otorgó permiso para la cámara</Text>
+          ) : (
+            <View style={{ width: 300, height: 300 }}>
+              <CameraView
+                onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
+                barcodeScannerSettings={{ barcodeTypes: ['qr', 'pdf417'] }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              {scanned && (
+                <Button title={'Escanear de nuevo'} onPress={() => setScanned(false)} />
+              )}
+            </View>
+          )}
+          <Pressable
+            onPress={() => {
+              setScannerVisible(false)
+              setScanned(false)
+            }}
+            style={{ marginTop: 24, padding: 12 }}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Cerrar</Text>
+          </Pressable>
+        </View>
+      </Modal>
     </>
   )
 }
