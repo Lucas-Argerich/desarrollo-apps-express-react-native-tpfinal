@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, ActivityIndicator, View, FlatList } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/ui/Header';
 import SearchBar from '../../components/ui/SearchBar';
 import { api } from '@/services/api';
 import { Curso, Receta } from '@/utils/types';
 import SearchResult from '@/components/SearchResult';
 import Tabs from '@/components/ui/Tabs';
+import CustomScreenView from '@/components/CustomScreenView';
 
 // Types for API response
 interface SearchResultApi {
@@ -33,11 +33,11 @@ export default function BusquedaScreen() {
   const filters: FilterType[] = ['todos', 'recetas', 'cursos', 'ingredientes'];
 
   useEffect(() => {
-    if (!searchQuery) {
-      setResults({ recipes: [], courses: [] });
-      setSearched(false);
-      return;
-    }
+    // if (!searchQuery) {
+    //   setResults({ recipes: [], courses: [] });
+    //   setSearched(false);
+    //   return;
+    // }
 
     // Cancel previous request if it exists
     if (abortControllerRef.current) {
@@ -149,6 +149,7 @@ export default function BusquedaScreen() {
         data={mixedResults}
         keyExtractor={(_, idx) => idx.toString()}
         numColumns={2}
+        scrollEnabled={false}
         renderItem={({ item }) => <SearchResult result={item} />}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
@@ -158,7 +159,7 @@ export default function BusquedaScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <CustomScreenView style={styles.container}>
       <Header 
         title="Búsqueda"
         subtitle="Encontrá lo que buscás"
@@ -180,7 +181,7 @@ export default function BusquedaScreen() {
       <View style={styles.resultsContainer}>
         {renderResults()}
       </View>
-    </SafeAreaView>
+    </CustomScreenView>
   );
 }
 

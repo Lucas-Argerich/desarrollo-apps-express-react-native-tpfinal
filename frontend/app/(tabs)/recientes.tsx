@@ -8,19 +8,21 @@ import ProgressBar from '../../components/ui/ProgressBar'
 import CustomScreenView from '../../components/CustomScreenView'
 import { api } from '@/services/api'
 import RecipeCard from '@/components/RecipeCard'
+import CourseCard from '../../components/CourseCard'
 
 export default function RecientesScreen() {
   // State for dynamic data
   const [recentCourse, setRecentCourse] = useState<any>(null)
   const [recentRecipes, setRecentRecipes] = useState<any[]>([])
   const [recentSearches, setRecentSearches] = useState<string[]>([])
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setLoading(true)
     setError(null)
-    api('/recipes', 'GET', { query: { offset: 2, limit: 2 } })
+    const recipesPromise = api('/recipes', 'GET', { query: { offset: 2, limit: 2 } })
       .then((res) => res.json())
       .then((data) => {
         setRecentCourse(null)
@@ -30,6 +32,13 @@ export default function RecientesScreen() {
       .catch((err) => {
         setError('No se pudieron cargar los recientes.')
       })
+    const coursesPromise = api('/courses/user/subscribed', 'GET')
+      .then((res) => res.json())
+      .then((data) => {
+        setEnrolledCourses(data || [])
+      })
+      .catch(() => setEnrolledCourses([]))
+    Promise.all([recipesPromise, coursesPromise])
       .finally(() => setLoading(false))
   }, [])
 
@@ -86,7 +95,7 @@ export default function RecientesScreen() {
           <Text style={styles.emptyText}>No hay cursos recientes.</Text>
         )}
 
-        <SectionHeader title="Recetas recientes" onSeeMorePress={() => router.push('/recetario')} />
+        <SectionHeader title="Recetas recientes" onSeeMorePress={() => router.replace('/recetario')} />
         {recentRecipes.length > 0 ? (
           <ScrollView
             horizontal
@@ -104,7 +113,26 @@ export default function RecientesScreen() {
           <Text style={styles.emptyText}>No hay recetas recientes.</Text>
         )}
 
-        <SectionHeader title="Búsquedas recientes" onSeeMorePress={() => {}} />
+        {/* Enrolled Courses Section */}
+        <SectionHeader title="Cursos inscriptos" onSeeMorePress={() => router.replace('/recetario')} />
+        {enrolledCourses.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.recipesContainer}
+          >
+            {enrolledCourses.map((course) => (
+              <CourseCard
+                key={course.idCurso || course.id}
+                item={course}
+              />
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={styles.emptyText}>No hay cursos inscriptos.</Text>
+        )}
+
+        <SectionHeader title="Búsquedas recientes" onSeeMorePress={() => router.replace('/busqueda')} />
         <View style={styles.searchesContainer}>
           {recentSearches.length > 0 ? (
             recentSearches.map((search, idx) => (

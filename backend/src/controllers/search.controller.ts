@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../types';
-import { SearchQuery, SearchResponse } from '../types';
+import { SearchResponse } from '../types';
 import { courseParse } from './course.controller';
 import { recipeParse } from './recipe.controller';
 
@@ -11,7 +11,7 @@ export const search = async (req: AuthRequest, res: Response) => {
   try {
     const { q: query, type, limit = '10', offset = '0' } = req.query;
 
-    if (!query || typeof query !== 'string') {
+    if (typeof query !== 'string') {
       res.status(400).json({ error: 'Search query is required' });
       return;
     }
@@ -66,7 +66,18 @@ export const search = async (req: AuthRequest, res: Response) => {
     if (!type || type === 'course') {
       const courses = await prisma.curso.findMany({
         include: {
-          cursoExtra: true,
+          cursoExtra: {
+            include: {
+              utilizados: {
+                include: {
+                  ingrediente: true,
+                  utencilio: true,
+                  unidad: true
+                }
+              }
+            }
+          },
+          modulos: true,
           cronogramas: {
             include: {
               sede: true,

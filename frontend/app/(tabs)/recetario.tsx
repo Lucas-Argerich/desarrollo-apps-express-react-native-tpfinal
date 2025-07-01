@@ -130,6 +130,7 @@ export default function RecetarioScreen() {
       <SectionHeader
         title={user?.rol === 'profesor' ? 'Cursos creados' : 'Mis Cursos'}
         style={{ marginHorizontal: 24, marginTop: 16, marginBottom: 16 }}
+        onSeeMorePress={() => router.push('/busqueda')}
       />
       {user?.rol === 'profesor' && (
         <View
@@ -174,6 +175,7 @@ export default function RecetarioScreen() {
       <SectionHeader
         title={user?.rol === 'profesor' ? 'Recetas creadas' : 'Mis Recetas'}
         style={{ marginHorizontal: 24, marginTop: 16, marginBottom: 16 }}
+        onSeeMorePress={() => router.push('/busqueda')}
       />
       {user?.rol === 'profesor' && (
         <View

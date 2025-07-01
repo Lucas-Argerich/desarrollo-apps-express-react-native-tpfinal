@@ -290,7 +290,9 @@ export const unregisterFromCourse = async (req: AuthRequest, res: Response) => {
     const enrollment = await prisma.asistenciaCurso.findFirst({
       where: {
         idAlumno: req.user.idUsuario,
-        idCronograma: id
+        cronograma: {
+          idCurso: id
+        }
       }
     })
 

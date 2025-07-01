@@ -11,6 +11,7 @@ import { api } from '@/services/api'
 import { Receta } from '@/utils/types'
 import Tabs from '../ui/Tabs'
 import SectionHeader from '../ui/SectionHeader'
+import { router } from 'expo-router'
 
 interface RecetasListProps extends ViewProps {
   title?: string
@@ -39,7 +40,7 @@ export default function RecetasList({ title, style, ...props }: RecetasListProps
 
   return (
     <View style={style} {...props}>
-      <SectionHeader title={title ?? 'Explorá Recetas'} />
+      <SectionHeader title={title ?? 'Explorá Recetas'} onSeeMorePress={() => router.push('/busqueda')} />
       {/* Tabs */}
       <Tabs tabs={recipeTabs} activeTab={activeTab} onTabPress={(_, idx) => setActiveTab(idx)} />
       {/* Placeholder Animation */}

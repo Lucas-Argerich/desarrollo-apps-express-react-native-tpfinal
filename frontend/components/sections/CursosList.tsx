@@ -4,6 +4,7 @@ import { Curso } from '@/utils/types'
 import { useEffect, useState } from 'react'
 import { api } from '@/services/api'
 import SectionHeader from '../ui/SectionHeader'
+import { router } from 'expo-router'
 
 interface CursosListProps extends ViewProps {
   title?: string
@@ -25,7 +26,7 @@ export default function CursosList({ title, style, ...props }: CursosListProps) 
 
   return (
     <View style={style} {...props}>
-      <SectionHeader title={title ?? 'Cursos Destacados'} />
+      <SectionHeader title={title ?? 'Cursos Destacados'} onSeeMorePress={() => router.push('/busqueda')} />
       <FlatList
         data={courses}
         keyExtractor={(item) => item.idCurso.toString()}

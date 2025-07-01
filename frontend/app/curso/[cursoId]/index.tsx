@@ -67,6 +67,51 @@ const Page = () => {
     ])
   }
 
+  const handleUnsubscribe = async () => {
+    Alert.alert('Darse de Baja', '¿Estás seguro de que quieres darte de baja de este curso?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Confirmar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const courseId = Array.isArray(cursoId) ? cursoId[0] : cursoId
+            await api('/courses/:id/register', 'DELETE', { params: { id: courseId } })
+            Alert.alert('Éxito', 'Te has dado de baja del curso')
+            router.dismissTo('/')
+          } catch (error) {
+            console.error(error)
+            Alert.alert('Error', 'No se pudo dar de baja del curso')
+          }
+        }
+      }
+    ])
+  }
+
+  // Darse de Baja button style
+  const UnsubscribeButton = () => (
+    <TouchableOpacity
+      onPress={handleUnsubscribe}
+      style={{
+        alignSelf: 'flex-start',
+        marginHorizontal: 16,
+        marginTop: 16,
+        marginBottom: 0,
+        backgroundColor: '#FF6B6B',
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+        gap: 8,
+      }}
+    >
+      <Ionicons name="log-out-outline" size={20} color="#fff" />
+      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>Darse de Baja</Text>
+    </TouchableOpacity>
+  )
+
   if (loading)
     return (
       <CustomScreenView>
@@ -120,122 +165,125 @@ const Page = () => {
         </View>
       </Hero>
 
-        {/* Owner Actions */}
-        {isCreator && (
-          <View style={styles.ownerActions}>
-            <TouchableOpacity style={styles.editButton} onPress={handleEditCourse}>
-              <Ionicons name="create-outline" size={20} color="#EE964B" />
-              <Text style={styles.editButtonText}>Editar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteCourse}>
-              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
-              <Text style={styles.deleteButtonText}>Eliminar</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Tabs */}
-        <View style={styles.tabsRow}>
-          <Text style={styles.tabActive}>Resumen</Text>
-          <Text style={styles.tabInactive}>Detalles</Text>
+      {/* Owner Actions */}
+      {isCreator && (
+        <View style={styles.ownerActions}>
+          <TouchableOpacity style={styles.editButton} onPress={handleEditCourse}>
+            <Ionicons name="create-outline" size={20} color="#EE964B" />
+            <Text style={styles.editButtonText}>Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteCourse}>
+            <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+            <Text style={styles.deleteButtonText}>Eliminar</Text>
+          </TouchableOpacity>
         </View>
+      )}
 
-        {/* Info row (match RecetaScreen style) */}
-        <View style={styles.infoContainer}>
-          <View style={styles.infoColumn}>
-            <View style={styles.infoItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="calendar-outline" size={16} color="#7E7E7E" />
-              </View>
-              <Text style={styles.infoText}>
-                {course.duracion ? `${course.duracion} semanas` : '6 semanas'}
-              </Text>
+      {/* Tabs */}
+      <View style={styles.tabsRow}>
+        <Text style={styles.tabActive}>Resumen</Text>
+        <Text style={styles.tabInactive}>Detalles</Text>
+      </View>
+
+      {/* Info row (match RecetaScreen style) */}
+      <View style={styles.infoContainer}>
+        <View style={styles.infoColumn}>
+          <View style={styles.infoItem}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="calendar-outline" size={16} color="#7E7E7E" />
             </View>
-            <View style={styles.infoItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="time-outline" size={16} color="#7E7E7E" />
-              </View>
-              <Text style={styles.infoText}>2 horas/semana</Text>
-            </View>
+            <Text style={styles.infoText}>
+              {course.duracion ? `${course.duracion} semanas` : '6 semanas'}
+            </Text>
           </View>
-          <View style={styles.infoColumn}>
-            <View style={styles.infoItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="restaurant-outline" size={16} color="#7E7E7E" />
-              </View>
-              <Text style={styles.infoText}>{course.dificultad || 'intermedio'}</Text>
+          <View style={styles.infoItem}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="time-outline" size={16} color="#7E7E7E" />
             </View>
-            <View style={styles.infoItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="star" size={16} color="#7E7E7E" />
-              </View>
-              <Text style={styles.infoText}>{course.calificacion?.toFixed(1) || '4.8'}</Text>
-            </View>
+            <Text style={styles.infoText}>2 horas/semana</Text>
           </View>
         </View>
-
-        {/* Description */}
-        <Text style={styles.description}>{course.descripcion}</Text>
-
-        {/* Contenido */}
-        <View style={styles.tabsRow}>
-          <Text style={styles.sectionTitle}>Contenido</Text>
-        </View>
-        <Text style={styles.contentDescription}>
-          Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede
-          a material digital.
-        </Text>
-        <View style={styles.modulesList}>
-          {course.modulos?.map((modulo, index) => (
-            <View key={index} style={styles.moduleItem}>
-              <Text style={styles.moduleNumber}>{index + 1}.</Text>
-              <Text style={styles.moduleTitle}>{capitalize(modulo.titulo)}</Text>
+        <View style={styles.infoColumn}>
+          <View style={styles.infoItem}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="restaurant-outline" size={16} color="#7E7E7E" />
             </View>
-          ))}
+            <Text style={styles.infoText}>{course.dificultad || 'intermedio'}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="star" size={16} color="#7E7E7E" />
+            </View>
+            <Text style={styles.infoText}>{course.calificacion?.toFixed(1) || '4.8'}</Text>
+          </View>
         </View>
+      </View>
 
-        {/* Ingredients */}
-        {course.ingredientes && course.ingredientes.length > 0 && (
-          <IngredientUtensilList
-            title="Ingredientes"
-            items={course.ingredientes.map((ing) => ({
-              idUtilizado: (ing as any).idUtilizado ?? 0,
-              nombre: (ing as any).nombre ?? '',
-              cantidad: (ing as any).cantidad ?? 1,
-              unidad: (ing as any).unidad ?? 'u',
-              observaciones: (ing as any).observaciones ?? ''
-            }))}
-          />
-        )}
+      {/* Description */}
+      <Text style={styles.description}>{course.descripcion}</Text>
 
-        {/* Utensils */}
-        {course.utencilios && course.utencilios.length > 0 && (
-          <IngredientUtensilList
-            title="Utencilios"
-            items={course.utencilios.map((ut) => ({
-              idUtilizado: (ut as any).idUtilizado ?? 0,
-              nombre: (ut as any).nombre ?? '',
-              cantidad: (ut as any).cantidad ?? 1,
-              unidad: (ut as any).unidad ?? 'u',
-              observaciones: (ut as any).observaciones ?? ''
-            }))}
-          />
-        )}
+      {/* Contenido */}
+      <View style={styles.tabsRow}>
+        <Text style={styles.sectionTitle}>Contenido</Text>
+      </View>
+      <Text style={styles.contentDescription}>
+        Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede
+        a material digital.
+      </Text>
+      <View style={styles.modulesList}>
+        {course.modulos?.map((modulo, index) => (
+          <View key={index} style={styles.moduleItem}>
+            <Text style={styles.moduleNumber}>{index + 1}.</Text>
+            <Text style={styles.moduleTitle}>{capitalize(modulo.titulo)}</Text>
+          </View>
+        ))}
+      </View>
 
-        {/* Cursos Relacionados */}
-        <View style={styles.relatedHeaderRow}>
-          <Text style={styles.relatedTitle}>Cursos Relacionados</Text>
-          <Text style={styles.relatedSeeMore}>Ver mas</Text>
-        </View>
-        <FlatList
-          data={related || []}
-          keyExtractor={(item, idx) => idx.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ marginBottom: 32, gap: 28 }}
-          renderItem={({ item }) => <CourseCard item={item} />}
-          style={{ marginLeft: 16 }}
+      {/* Darse de Baja button below Hero */}
+      {isSubscribed && <UnsubscribeButton />}
+
+      {/* Ingredients */}
+      {course.ingredientes && course.ingredientes.length > 0 && (
+        <IngredientUtensilList
+          title="Ingredientes"
+          items={course.ingredientes.map((ing) => ({
+            idUtilizado: (ing as any).idUtilizado ?? 0,
+            nombre: (ing as any).nombre ?? '',
+            cantidad: (ing as any).cantidad ?? 1,
+            unidad: (ing as any).unidad ?? 'u',
+            observaciones: (ing as any).observaciones ?? ''
+          }))}
         />
+      )}
+
+      {/* Utensils */}
+      {course.utencilios && course.utencilios.length > 0 && (
+        <IngredientUtensilList
+          title="Utencilios"
+          items={course.utencilios.map((ut) => ({
+            idUtilizado: (ut as any).idUtilizado ?? 0,
+            nombre: (ut as any).nombre ?? '',
+            cantidad: (ut as any).cantidad ?? 1,
+            unidad: (ut as any).unidad ?? 'u',
+            observaciones: (ut as any).observaciones ?? ''
+          }))}
+        />
+      )}
+
+      {/* Cursos Relacionados */}
+      <View style={styles.relatedHeaderRow}>
+        <Text style={styles.relatedTitle}>Cursos Relacionados</Text>
+        <Text style={styles.relatedSeeMore}>Ver mas</Text>
+      </View>
+      <FlatList
+        data={related || []}
+        keyExtractor={(item, idx) => idx.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ marginBottom: 32, gap: 28 }}
+        renderItem={({ item }) => <CourseCard item={item} />}
+        style={{ marginLeft: 16 }}
+      />
       </CustomScreenView>
 
       {/* Conditional Action Button */}
@@ -438,7 +486,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 18,
-    marginTop: 16,
+    marginTop: 24,
     marginHorizontal: 16
   },
   relatedTitle: {
