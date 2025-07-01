@@ -79,7 +79,7 @@ model Ingrediente {
 
 model Unidad {
   idUnidad            Int          @id @default(autoincrement())
-  descripcion         String       @db.VarChar(50)
+  descripcion         String       @db.VarChar(50) @unique
   utilizados          Utilizado[]
   conversionesOrigen  Conversion[] @relation("UnidadOrigen")
   conversionesDestino Conversion[] @relation("UnidadDestino")

@@ -49,7 +49,7 @@ export default function EditarRecetaScreen() {
         const recipeId = Array.isArray(id) ? id[0] : id
         const response = await api('/recipes/:id', 'GET', { params: { id: recipeId } })
         const recipe = await response.json()
-        
+
         setNombreReceta(recipe.nombreReceta || '')
         setDescripcionReceta(recipe.descripcionReceta || '')
         setFotoPrincipal(recipe.fotoPrincipal || '')
