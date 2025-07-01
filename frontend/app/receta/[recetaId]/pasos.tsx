@@ -7,6 +7,7 @@ import { useReceta } from '@/contexts/RecetaContext'
 import Hero from '@/components/ui/Hero'
 import ActionButton from '@/components/ui/ActionButton'
 import { capitalize } from '@/utils'
+import IngredientUtensilList from '@/components/IngredientUtensilList'
 
 export default function RecetaPasosScreen() {
   const { receta, isFavorite, toggleFavorite } = useReceta()
@@ -132,23 +133,10 @@ export default function RecetaPasosScreen() {
         )}
 
         {/* Ingredients Section */}
-        <Text style={styles.sectionTitle}>Ingredientes</Text>
-        <View style={styles.ingredientsGrid}>
-          {receta.ingredientes?.map((item) => (
-            <View key={item.idUtilizado} style={styles.ingredientCard}>
-              <Image
-                source={{ uri: 'https://picsum.photos/113/93' }}
-                style={styles.ingredientImage}
-              />
-              <View style={styles.ingredientInfo}>
-                <Text style={styles.ingredientName}>{item.nombre}</Text>
-                <Text style={styles.ingredientAmount}>
-                  {item.cantidad} {item.unidad}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
+        <IngredientUtensilList
+          title="Ingredientes"
+          items={receta.ingredientes || []}
+        />
       </CustomScreenView>
       {isLastStep && (
         <ActionButton onPress={() => router.replace(`/receta/${receta.idReceta}/puntuacion`)}>

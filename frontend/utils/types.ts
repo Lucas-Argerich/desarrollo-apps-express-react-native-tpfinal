@@ -87,6 +87,38 @@ export interface Receta {
   }
 }
 
+export interface Usuario {
+  idUsuario: number
+  nombre: string
+  nickname: string
+  mail: string
+  direccion: string | null
+  avatar: string | null
+  password?: string // Optional for update operations
+}
+
+export interface Asistencia {
+  idAsistencia: number
+  alumno: Usuario
+}
+
+export interface Cronograma {
+  idCronograma: number
+  idSede: number
+  idCurso: number
+  fechaInicio: string | null
+  fechaFin: string | null
+  vacantesDisponibles: number | null
+  sede?: {
+    idSede: number
+    nombreSede: string
+    direccionSede: string
+    telefonoSede: string | null
+    mailSede: string | null
+    whatsApp: string | null
+  }
+}
+
 export interface Curso {
   idCurso: number
   descripcion: string | null
@@ -101,6 +133,7 @@ export interface Curso {
   alumnos?: number
   calificacion?: number
   modulos?: Modulo[]
+  cronogramas?: Cronograma[]
 }
 
 export interface Modulo {

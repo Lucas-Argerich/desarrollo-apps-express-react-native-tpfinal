@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, Image, FlatList } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import CustomScreenView from '@/components/CustomScreenView'
 import { api } from '@/services/api'
@@ -9,32 +9,96 @@ import ActionButton from '@/components/ui/ActionButton'
 import { Ionicons } from '@expo/vector-icons'
 import Hero from '@/components/ui/Hero'
 import { capitalize } from '@/utils'
+import { authService } from '@/services/auth'
 
 export default function CursoScreen() {
   const { cursoId } = useLocalSearchParams()
   const [course, setCourse] = useState<Curso | null>(null)
   const [loading, setLoading] = useState(true)
   const [related, setRelated] = useState<Curso[] | null>(null)
+  const [user, setUser] = useState<any>(null)
+  const [isEnrolled, setIsEnrolled] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
-    if (cursoId && typeof cursoId === 'string') {
-      api('/courses/:id', 'GET', { params: { id: cursoId } })
-        .then(async (res) => {
-          const data = await res.json()
-          setCourse(data)
-          setLoading(false)
-        })
-        .catch(() => setLoading(false))
+    const fetchData = async () => {
+      try {
+        // Get user data
+        const userData = await authService.getUser()
+        setUser(userData)
+
+        if (cursoId && typeof cursoId === 'string') {
+          // Get course data
+          const courseResponse = await api('/courses/:id', 'GET', { params: { id: cursoId } })
+          const courseData = await courseResponse.json()
+          setCourse(courseData)
+
+          // Check if user is enrolled
+          if (userData) {
+            try {
+              const enrolledResponse = await api('/courses/user/subscribed', 'GET')
+              const enrolledCourses = await enrolledResponse.json()
+              const enrolled = enrolledCourses.some((c: any) => c.idCurso === courseData.idCurso)
+              setIsEnrolled(enrolled)
+
+              // Check if user is the owner
+              setIsOwner(
+                userData.id === courseData.idUsuario || userData.email === courseData.usuario?.mail
+              )
+            } catch (error) {
+              console.log('Error checking enrollment:', error)
+            }
+          }
+        }
+
+        // Get related courses
+        const relatedResponse = await api('/courses', 'GET', { query: { limit: 3 } })
+        const relatedData = await relatedResponse.json()
+        setRelated(relatedData)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    api('/courses', 'GET', {
-      query: {
-        limit: 2
-      }
-    })
-      .then((res) => res.json())
-      .then((data) => setRelated(data))
+    fetchData()
   }, [cursoId])
+
+  const handleEnroll = async () => {
+    if (!user) {
+      Alert.alert('Error', 'Debes iniciar sesión para inscribirte en el curso')
+      return
+    }
+
+    // Navigate to enrollment screen instead of direct enrollment
+    router.push(`/curso/${cursoId}/inscripcion`)
+  }
+
+  const handleEditCourse = () => {
+    router.push(`/curso/${cursoId}/editar`)
+  }
+
+  const handleDeleteCourse = async () => {
+    Alert.alert('Eliminar Curso', '¿Estás seguro de que quieres eliminar este curso?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const recipeId = Array.isArray(cursoId) ? cursoId[0] : cursoId
+            await api('/courses/:id', 'DELETE', { params: { id: recipeId } })
+            Alert.alert('Éxito', 'Curso eliminado correctamente')
+            router.back()
+          } catch (error) {
+            console.error('Error deleting course:', error)
+            Alert.alert('Error', 'No se pudo eliminar el curso')
+          }
+        }
+      }
+    ])
+  }
 
   if (loading)
     return (
@@ -53,28 +117,13 @@ export default function CursoScreen() {
       </CustomScreenView>
     )
 
-  // Placeholder data for ingredients and utensils
-  const ingredientes = [
-    { nombre: 'Harina de Trigo', cantidad: '500g' },
-    { nombre: 'Levadura Seca', cantidad: '5g' },
-    { nombre: 'Sal', cantidad: '10g' },
-    { nombre: 'Azucar', cantidad: '10g' },
-    { nombre: 'Aceite de Oliva', cantidad: '30ml (Opcional)' }
-  ]
-  const utensilios = [
-    'Bol Grande',
-    'Balanza de Cocina',
-    'Rodillo de Amasar',
-    'Rasqueta',
-    'Horno con Termómetro',
-    'Bandeja de Hornear'
-  ]
-
   return (
     <>
       <CustomScreenView>
         <Hero image={course.imagen ?? 'https://picsum.photos/id/374/462'}>
-          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>{capitalize(course.titulo ?? '')}</Text>
+          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
+            {capitalize(course.titulo ?? '')}
+          </Text>
           <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
             <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
               <Text style={{ color: '#fff', fontSize: 16 }}>
@@ -84,6 +133,20 @@ export default function CursoScreen() {
             </View>
           </View>
         </Hero>
+
+        {/* Owner Actions */}
+        {isOwner && (
+          <View style={styles.ownerActions}>
+            <TouchableOpacity style={styles.editButton} onPress={handleEditCourse}>
+              <Ionicons name="create-outline" size={20} color="#EE964B" />
+              <Text style={styles.editButtonText}>Editar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteCourse}>
+              <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+              <Text style={styles.deleteButtonText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Tabs */}
         <View style={styles.tabsRow}>
@@ -130,6 +193,7 @@ export default function CursoScreen() {
           {course.descripcion ||
             'Aprende desde cero las técnicas esenciales de la panadería artesanal. Descubre cómo hacer panes crujientes, esponjosos y llenos de sabor utilizando ingredientes naturales y procesos tradicionales.'}
         </Text>
+
         {/* Contenido */}
         <View style={styles.tabsRow}>
           <Text style={styles.sectionTitle}>Contenido</Text>
@@ -146,49 +210,7 @@ export default function CursoScreen() {
             </View>
           ))}
         </View>
-        {/* Ingredientes Necesarios */}
-        <Text style={styles.sectionTitle}>Ingredientes Necesarios</Text>
-        <FlatList
-          data={ingredientes}
-          keyExtractor={(item, idx) => idx.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ marginBottom: 18, gap: 16 }}
-          renderItem={({ item }) => (
-            <View style={styles.ingredientCard}>
-              <Image
-                source={{ uri: 'https://picsum.photos/113/93' }}
-                style={styles.ingredientImg}
-              />
-              <View style={styles.ingredientTextBox}>
-                <Text style={styles.ingredientName}>{item.nombre}</Text>
-                <Text style={styles.ingredientQty}>{item.cantidad}</Text>
-              </View>
-            </View>
-          )}
-          style={{ marginLeft: 16 }}
-        />
-        {/* Utensilios Recomendados */}
-        <Text style={styles.sectionTitle}>Utensilios Recomendados</Text>
-        <FlatList
-          data={utensilios}
-          keyExtractor={(item, idx) => idx.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ marginBottom: 18, gap: 16 }}
-          renderItem={({ item }) => (
-            <View style={styles.utensilCard}>
-              <Image
-                source={{ uri: 'https://picsum.photos/113/93' }}
-                style={styles.ingredientImg}
-              />
-              <View style={styles.ingredientTextBox}>
-                <Text style={styles.ingredientName}>{item}</Text>
-              </View>
-            </View>
-          )}
-          style={{ marginLeft: 16 }}
-        />
+
         {/* Cursos Relacionados */}
         <View style={styles.relatedHeaderRow}>
           <Text style={styles.relatedTitle}>Cursos Relacionados</Text>
@@ -204,10 +226,14 @@ export default function CursoScreen() {
           style={{ marginLeft: 16 }}
         />
       </CustomScreenView>
-      <ActionButton onPress={() => router.push(`/curso/${cursoId}/inscripcion`)}>
-        <Text style={styles.enrollBtnText}>Inscribirse</Text>
-        <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-      </ActionButton>
+
+      {/* Conditional Action Button */}
+      {!isOwner && !isEnrolled && user?.rol !== 'profesor' && (
+        <ActionButton onPress={handleEnroll}>
+          <Text style={styles.enrollBtnText}>Inscribirse</Text>
+          <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+        </ActionButton>
+      )}
     </>
   )
 }
@@ -223,6 +249,46 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 16,
     textAlign: 'center'
+  },
+  ownerActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5'
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#EE964B',
+    borderRadius: 8,
+    backgroundColor: 'rgba(238, 150, 75, 0.1)'
+  },
+  editButtonText: {
+    color: '#EE964B',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)'
+  },
+  deleteButtonText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    fontWeight: '600'
   },
   topBar: {
     width: 100,
@@ -345,50 +411,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
     fontWeight: '500'
   },
-  ingredientCard: {
-    width: 113,
-    height: 177,
-    backgroundColor: 'rgba(238,150,75,0.6)',
-    borderRadius: 16,
-    overflow: 'hidden'
-  },
-  ingredientImg: {
-    width: 113,
-    height: 93,
-    resizeMode: 'cover'
-  },
-  ingredientTextBox: {
-    flex: 1,
-    padding: 8,
-    justifyContent: 'flex-start'
-  },
-  ingredientName: {
-    color: '#FFFFFF',
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    fontSize: 16,
-    marginBottom: 2
-  },
-  ingredientQty: {
-    color: '#FFFFFF',
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    fontSize: 14
-  },
-  utensilCard: {
-    width: 113,
-    height: 177,
-    backgroundColor: 'rgba(13,59,102,0.4)',
-    borderRadius: 16,
-    overflow: 'hidden'
-  },
   relatedHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 18,
     marginTop: 16,
-    marginHorizontal: 16,
+    marginHorizontal: 16
   },
   relatedTitle: {
     color: '#2F2F2F',

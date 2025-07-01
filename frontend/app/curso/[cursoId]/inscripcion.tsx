@@ -1,526 +1,503 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import CustomScreenView from '@/components/CustomScreenView';
-import { useLocalSearchParams } from 'expo-router';
-import { api } from '@/services/api';
-import { Curso } from '@/utils/types';
-
-type CourseType = 'virtual' | 'online' | 'presencial';
-
-const ingredients = [
-  { id: 1, name: 'Harina de Trigo', amount: '500g', image: 'https://picsum.photos/113/93' },
-  { id: 2, name: 'Levadura Seca', amount: '5g', image: 'https://picsum.photos/113/93' },
-  { id: 3, name: 'Sal', amount: '10g', image: 'https://picsum.photos/113/93' },
-  { id: 4, name: 'Azucar', amount: '10g', image: 'https://picsum.photos/113/93' },
-  { id: 5, name: 'Aceite de Oliva', amount: '30ml (Opcional)', image: 'https://picsum.photos/113/93' },
-];
-
-const utensils = [
-  { id: 1, name: 'Bol Grande', image: 'https://picsum.photos/113/93' },
-  { id: 2, name: 'Balanza de Cocina', image: 'https://picsum.photos/113/93' },
-  { id: 3, name: 'Rodillo de Amasar', image: 'https://picsum.photos/113/93' },
-  { id: 4, name: 'Rasqueta', image: 'https://picsum.photos/113/93' },
-  { id: 5, name: 'Horno con Termómetro', image: 'https://picsum.photos/113/93' },
-  { id: 6, name: 'Bandeja de Hornear', image: 'https://picsum.photos/113/93' },
-];
-
-const relatedCourses = [
-  {
-    id: 1,
-    title: 'Cocina Mediterránea: Técnicas y Secretos',
-    level: 'Nivel Intermedio - $$$',
-    students: 20,
-    rating: 4.7,
-    image: 'https://picsum.photos/317/200',
-  },
-  {
-    id: 2,
-    title: 'Cocina Mediterránea: Técnicas y Secretos',
-    level: 'Nivel Intermedio - $$$',
-    students: 20,
-    rating: 4.8,
-    image: 'https://picsum.photos/317/200',
-  },
-];
+import React, { useEffect, useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import CustomScreenView from '@/components/CustomScreenView'
+import Hero from '@/components/ui/Hero'
+import Select from '@/components/ui/Select'
+import { useLocalSearchParams, router } from 'expo-router'
+import { api } from '@/services/api'
+import { Curso, Cronograma } from '@/utils/types'
+import { authService } from '@/services/auth'
+import { capitalize } from '@/utils'
 
 export default function CursoInscripcionScreen() {
-  const { cursoId } = useLocalSearchParams();
-  const [course, setCourse] = useState<Curso | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [type] = useState<CourseType>('virtual');
+  const { cursoId } = useLocalSearchParams()
+  const [course, setCourse] = useState<Curso | null>(null)
+  const [cronograma, setCronograma] = useState<Cronograma[]>([])
+  const [selectedSchedule, setSelectedSchedule] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [enrolling, setEnrolling] = useState(false)
 
   useEffect(() => {
-    if (cursoId && typeof cursoId === 'string') {
-      api('/courses/:id', 'GET', { params: { id: cursoId } })
-        .then(async (res) => {
-          const data = await res.json();
-          setCourse(data);
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
-    }
-  }, [cursoId]);
+    const fetchData = async () => {
+      try {
+        // Get user data
+        const userData = await authService.getUser()
+        setUser(userData)
 
-  const getCourseDescription = () => {
-    switch (type) {
-      case 'virtual':
-        return 'Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede a material digital.';
-      case 'online':
-        return 'Aprende a tu ritmo con contenido pre-grabado, material descargable y acceso ilimitado a las lecciones.';
-      case 'presencial':
-        return 'Clases presenciales en nuestro estudio, con equipamiento profesional y atención personalizada.';
-      default:
-        return '';
+        if (cursoId && typeof cursoId === 'string') {
+          // Get course data
+          const courseResponse = await api('/courses/:id', 'GET', { params: { id: cursoId } })
+          const courseData = await courseResponse.json()
+          setCourse(courseData)
+          setCronograma(courseData.cronogramas)
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  };
 
-  const getEnrollButtonText = () => {
-    switch (type) {
-      case 'virtual':
-        return 'Inscribirse';
-      case 'online':
-        return 'Comenzar Ahora';
-      case 'presencial':
-        return 'Reservar Cupo';
-      default:
-        return 'Inscribirse';
+    fetchData()
+  }, [cursoId])
+
+  const handleEnroll = async () => {
+    if (!user) {
+      Alert.alert('Error', 'Debes iniciar sesión para inscribirte en el curso')
+      return
     }
-  };
 
-  if (loading) return <CustomScreenView style={styles.container}><Text>Cargando...</Text></CustomScreenView>
-  if (!course) return <CustomScreenView style={styles.container}><Text>No se encontró el curso</Text></CustomScreenView>
+    if (cronograma.length > 0 && !selectedSchedule) {
+      Alert.alert('Error', 'Debes seleccionar un horario para inscribirte')
+      return
+    }
+
+    setEnrolling(true)
+    try {
+      const courseId = Array.isArray(cursoId) ? cursoId[0] : cursoId
+      await api('/courses/:id/register', 'POST', { params: { id: courseId } })
+      Alert.alert('Éxito', 'Te has inscrito correctamente en el curso', [
+        { text: 'OK', onPress: () => router.back() }
+      ])
+    } catch (error) {
+      console.error('Error enrolling:', error)
+      Alert.alert('Error', 'No se pudo inscribir en el curso')
+    } finally {
+      setEnrolling(false)
+    }
+  }
+
+  const handleGoBack = () => {
+    router.back()
+  }
+
+  if (loading)
+    return (
+      <CustomScreenView>
+        <Text>Cargando...</Text>
+      </CustomScreenView>
+    )
+  if (!course)
+    return (
+      <CustomScreenView>
+        <Text>No se encontró el curso</Text>
+      </CustomScreenView>
+    )
 
   return (
-    <CustomScreenView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Course Image */}
-        <Image source={{ uri: course.imagen ?? '' }} style={styles.courseImage} />
-
-        {/* Tab Navigation */}
-        <View style={styles.tabContainer}>
-          <Text style={styles.activeTab}>Resumen</Text>
-          <Text style={styles.inactiveTab}>Detalles</Text>
-        </View>
-
-        {/* Course Info */}
-        <View style={styles.infoContainer}>
-          <View style={styles.infoColumn}>
-            <View style={styles.infoItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="calendar-outline" size={20} color="#7E7E7E" />
-              </View>
-              <Text style={styles.infoText}>6 semanas</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="time-outline" size={20} color="#7E7E7E" />
-              </View>
-              <View>
-                <Text style={styles.infoText}>2 horas</Text>
-                <Text style={styles.infoSubtext}>semanales</Text>
-              </View>
+    <>
+      <CustomScreenView style={styles.container}>
+        {/* Course Hero */}
+        <Hero image={course.imagen ?? 'https://picsum.photos/id/374/462'} state="closed">
+          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
+            {capitalize(course.titulo ?? '')}
+          </Text>
+          <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+              <Text style={{ color: '#fff', fontSize: 16 }}>
+                {course.calificacion?.toFixed(1) ?? '4.8'}
+              </Text>
+              <Ionicons name="star" size={16} color="#fff" />
             </View>
           </View>
-          <View style={styles.infoColumn}>
-            <View style={styles.infoItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="restaurant-outline" size={20} color="#7E7E7E" />
-              </View>
-              <Text style={styles.infoText}>intermedio</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="star" size={20} color="#7E7E7E" />
-              </View>
-              <Text style={styles.infoText}>4.8</Text>
-            </View>
+        </Hero>
+
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
+          {/* Tab Navigation */}
+          <View style={styles.tabContainer}>
+            <Text style={styles.activeTab}>Inscripción</Text>
+            <Text style={styles.inactiveTab}>Detalles</Text>
           </View>
-        </View>
 
-        {/* Description */}
-        <Text style={styles.description}>
-          {course.descripcion}
-        </Text>
+          {/* Modalidad Section */}
+          <View style={styles.modalidadContainer}>
+            <Text style={styles.modalidadLabel}>Modalidad</Text>
+            <Text style={styles.modalidadValue}>{course.modalidad || 'Virtual'}</Text>
+          </View>
 
-        {/* Content Section */}
-        <Text style={styles.sectionTitle}>Contenido</Text>
-        <Text style={styles.contentDescription}>
-          {getCourseDescription()}
-        </Text>
-
-        {/* Course Modules */}
-        <View style={styles.modulesContainer}>
-          {[
-            'Introducción a la panadería artesanal',
-            'Manejo de masas y fermentación',
-            'Técnicas de amasado y formado',
-            'Elaboración de panes clásicos',
-            'Panes especiales y de masa madre',
-            'Horneado y presentación final',
-          ].map((module, index) => (
-            <View key={index} style={styles.moduleItem}>
-              <Text style={styles.moduleNumber}>{index + 1}.</Text>
-              <Text style={styles.moduleTitle}>{module}</Text>
+          {/* Duración Section */}
+          {course.duracion && (
+            <View style={styles.modalidadContainer}>
+              <Text style={styles.modalidadLabel}>Carga Horaria</Text>
+              <Text style={[styles.modalidadValue, { fontSize: 18 }]}>{course.duracion} Min. por Semana</Text>
             </View>
-          ))}
-        </View>
+          )}
 
-        {/* Ingredients Section - Only show for virtual and presencial */}
-        {(type === 'virtual' || type === 'presencial') && (
-          <>
-            <Text style={styles.sectionTitle}>Ingredientes Necesarios</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.ingredientsContainer}>
-              {ingredients.map((ingredient) => (
-                <View key={ingredient.id} style={styles.ingredientCard}>
-                  <Image source={{ uri: ingredient.image }} style={styles.ingredientImage} />
-                  <View style={styles.ingredientInfo}>
-                    <Text style={styles.ingredientName}>{ingredient.name}</Text>
-                    <Text style={styles.ingredientAmount}>{ingredient.amount}</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </>
-        )}
+                      {/* Dificultad Section */}
+            {course.dificultad && (
+              <View style={styles.modalidadContainer}>
+                <Text style={styles.modalidadLabel}>Dificultad</Text>
+                <Text style={styles.modalidadValue}>{course.dificultad}</Text>
+              </View>
+            )}
 
-        {/* Utensils Section - Only show for virtual and presencial */}
-        {(type === 'virtual' || type === 'presencial') && (
-          <>
-            <Text style={styles.sectionTitle}>Utensilios Recomendados</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.utensilsContainer}>
-              {utensils.map((utensil) => (
-                <View key={utensil.id} style={styles.utensilCard}>
-                  <Image source={{ uri: utensil.image }} style={styles.utensilImage} />
-                  <View style={styles.utensilInfo}>
-                    <Text style={styles.utensilName}>{utensil.name}</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </>
-        )}
+            {/* Cronograma Section */}
+            {cronograma.length > 0 && (
+              <View style={styles.cronogramaContainer}>
+                <Text style={styles.cronogramaLabel}>Horarios Disponibles</Text>
+                <Select
+                  value={selectedSchedule}
+                  options={cronograma.map(c => {
+                    if (!c.fechaInicio || !c.fechaFin) return 'Horario no disponible'
+                    
+                    const startDate = new Date(c.fechaInicio).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })
+                    const endDate = new Date(c.fechaFin).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })
+                    const sede = c.sede ? ` - ${c.sede.nombreSede}` : ''
+                    const vacantes = c.vacantesDisponibles ? ` (${c.vacantesDisponibles} vacantes)` : ''
+                    return `${startDate} - ${endDate}${sede}${vacantes}`
+                  })}
+                  onSelect={setSelectedSchedule}
+                  placeholder="Selecciona un horario"
+                  style={{
+                    field: {
+                      backgroundColor: '#FFFFFF',
+                      borderWidth: 1,
+                      borderColor: '#E1E1E1',
+                      borderRadius: 12,
+                      height: 56,
+                      paddingHorizontal: 20
+                    },
+                    fieldText: {
+                      color: selectedSchedule ? '#1B1B1B' : '#7E7E7E',
+                      fontSize: 16,
+                      fontFamily: 'Roboto',
+                      fontWeight: '500'
+                    }
+                  }}
+                />
+              </View>
+            )}
 
-        {/* Related Courses Section */}
-        <View style={styles.relatedSection}>
-          <View style={styles.relatedHeader}>
-            <Text style={styles.relatedTitle}>Cursos Relacionados</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeMoreText}>Ver mas</Text>
+            {/* Precio Section */}
+            {course.precio && (
+              <View style={styles.precioContainer}>
+                <Text style={styles.precioLabel}>Precio</Text>
+                <Text style={styles.precioValue}>${course.precio}</Text>
+              </View>
+            )}
+
+          {/* Contenidos Section */}
+          {course.contenidos && (
+            <View style={styles.contenidosContainer}>
+              <Text style={styles.contenidosLabel}>Contenidos</Text>
+              <Text style={styles.contenidosValue}>{course.contenidos}</Text>
+            </View>
+          )}
+
+          {/* Requerimientos Section */}
+          {course.requerimientos && (
+            <View style={styles.requerimientosContainer}>
+              <Text style={styles.requerimientosLabel}>Requerimientos</Text>
+              <Text style={styles.requerimientosValue}>{course.requerimientos}</Text>
+            </View>
+          )}
+
+          {/* Información de Pago Section */}
+          <Text style={styles.paymentTitle}>Información de Pago</Text>
+
+          <View style={styles.paymentContainer}>
+            <Text style={styles.paymentLabel}>Tarjeta de Credito</Text>
+            <TouchableOpacity style={styles.paymentDropdown} activeOpacity={0.7}>
+              <View style={styles.paymentContent}>
+                <Ionicons name="card-outline" size={24} />
+                <Text style={styles.cardText}>**** **** **** 1234</Text>
+              </View>
+              <Ionicons name="chevron-down" size={20} color="#7E7E7E" />
             </TouchableOpacity>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.relatedCoursesContainer}>
-            {relatedCourses.map((course) => (
-              <View key={course.id} style={styles.courseCard}>
-                <Image source={{ uri: course.image }} style={styles.courseCardImage} />
-                <View style={styles.courseCardInfo}>
-                  <Text style={styles.courseCardTitle}>{course.title}</Text>
-                  <Text style={styles.courseCardLevel}>{course.level}</Text>
-                  <View style={styles.courseCardFooter}>
-                    <View style={styles.courseCardStats}>
-                      <Ionicons name="people-outline" size={13} color="#CAC8C8" />
-                      <Text style={styles.courseCardStatText}>{course.students}</Text>
-                    </View>
-                    <View style={styles.courseCardRating}>
-                      <Text style={styles.courseCardRatingText}>{course.rating}</Text>
-                      <Ionicons name="star" size={12} color="#CAC8C8" />
-                    </View>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/* Enroll Button */}
-      <TouchableOpacity style={styles.enrollButton}>
-        <Text style={styles.enrollButtonText}>{getEnrollButtonText()}</Text>
-        <Ionicons name="arrow-forward" size={23} color="#FFFFFF" />
-      </TouchableOpacity>
-    </CustomScreenView>
-  );
+        {/* Action Buttons */}
+      </CustomScreenView>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+          <Text style={styles.backButtonText}>Volver</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.enrollButton} onPress={handleEnroll} disabled={enrolling}>
+          <Text style={styles.enrollButtonText}>
+            {enrolling ? 'Inscribiendo...' : 'Inscribirse'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    padding: 28,
+    paddingBottom: 100
   },
-  courseImage: {
-    width: '100%',
-    height: 462,
-    resizeMode: 'cover',
-    marginBottom: 12,
+  scrollContent: {
+    padding: 28
+  },
+  spacer: {
+    width: 100,
+    height: 12,
+    backgroundColor: '#FFFFFF'
+  },
+  heroTitle: {
+    fontSize: 24,
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center'
   },
   tabContainer: {
     flexDirection: 'row',
-    marginBottom: 16,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    gap: 16,
+    marginBottom: 32
   },
   activeTab: {
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: 'Inter',
     fontWeight: '600',
-    color: '#1B1B1B',
-    marginRight: 16,
+    color: '#1B1B1B'
   },
   inactiveTab: {
-    fontSize: 22,
+    fontSize: 16,
     fontFamily: 'Inter',
     fontWeight: '600',
-    color: 'rgba(27,27,27,0.62)',
+    color: 'rgba(27,27,27,0.62)'
   },
-  infoContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
+  modalidadContainer: {
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 16
   },
-  infoColumn: {
-    gap: 24,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  iconContainer: {
-    width: 34,
-    height: 34,
-    backgroundColor: '#EDEDED',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 9,
-  },
-  infoText: {
-    fontSize: 18,
+  modalidadLabel: {
+    fontSize: 14,
     fontFamily: 'Roboto',
     fontWeight: '500',
     color: '#7E7E7E',
+    textAlign: 'center'
   },
-  infoSubtext: {
-    fontSize: 10,
+  modalidadValue: {
+    fontSize: 24,
     fontFamily: 'Roboto',
-    fontWeight: '500',
-    color: '#A5A5A5',
-  },
-  description: {
-    fontSize: 18,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    color: '#A5A5A5',
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontFamily: 'Inter',
     fontWeight: '600',
     color: '#1B1B1B',
-    marginBottom: 16,
+    textAlign: 'center'
   },
-  contentDescription: {
-    fontSize: 18,
+  cronogramaContainer: {
+    marginBottom: 32
+  },
+  cronogramaLabel: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    color: '#1B1B1B',
+    marginBottom: 12
+  },
+  precioContainer: {
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 32,
+    paddingVertical: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12
+  },
+  precioLabel: {
+    fontSize: 14,
     fontFamily: 'Roboto',
     fontWeight: '500',
-    color: '#A5A5A5',
-    lineHeight: 24,
-    marginBottom: 24,
+    color: '#7E7E7E',
+    textAlign: 'center'
   },
-  modulesContainer: {
-    gap: 16,
-    marginBottom: 24,
+  precioValue: {
+    fontSize: 24,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    color: '#1B1B1B',
+    textAlign: 'center'
   },
-  moduleItem: {
+  contenidosContainer: {
+    marginBottom: 32
+  },
+  contenidosLabel: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    color: '#1B1B1B',
+    marginBottom: 12
+  },
+  contenidosValue: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    color: '#7E7E7E',
+    lineHeight: 24
+  },
+  requerimientosContainer: {
+    marginBottom: 32
+  },
+  requerimientosLabel: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    color: '#1B1B1B',
+    marginBottom: 12
+  },
+  requerimientosValue: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    color: '#7E7E7E',
+    lineHeight: 24
+  },
+  modulosContainer: {
+    marginBottom: 32
+  },
+  modulosLabel: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    color: '#1B1B1B',
+    marginBottom: 16
+  },
+  moduloItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 22,
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: '#E1E1E1',
     borderRadius: 8,
-  },
-  moduleNumber: {
-    fontSize: 18,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    color: '#A5A5A5',
-    marginRight: 8,
-  },
-  moduleTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    color: '#A5A5A5',
-  },
-  ingredientsContainer: {
-    marginBottom: 24,
-  },
-  ingredientCard: {
-    width: 113,
-    height: 177,
-    marginRight: 16,
-    backgroundColor: 'rgba(238,150,75,0.6)',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  ingredientImage: {
-    width: '100%',
-    height: 93,
-    resizeMode: 'cover',
-  },
-  ingredientInfo: {
-    padding: 8,
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  ingredientName: {
-    color: '#FFFFFF',
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  ingredientAmount: {
-    color: '#FFFFFF',
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  utensilsContainer: {
-    marginBottom: 24,
-  },
-  utensilCard: {
-    width: 113,
-    height: 177,
-    marginRight: 16,
-    backgroundColor: 'rgba(13,59,102,0.4)',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  utensilImage: {
-    width: '100%',
-    height: 93,
-    resizeMode: 'cover',
-  },
-  utensilInfo: {
-    padding: 8,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  utensilName: {
-    color: '#FFFFFF',
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  relatedSection: {
-    marginBottom: 100,
-  },
-  relatedHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  relatedTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2F2F2F',
-  },
-  seeMoreText: {
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    color: '#888888',
-  },
-  relatedCoursesContainer: {
-    gap: 16,
-  },
-  courseCard: {
-    width: 317,
-    height: 211,
-    marginRight: 16,
-    borderRadius: 30,
-    overflow: 'hidden',
-  },
-  courseCardImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  courseCardInfo: {
-    position: 'absolute',
-    bottom: 15,
-    left: 15,
-    right: 15,
-    backgroundColor: 'rgba(29,29,29,0.4)',
-    borderRadius: 15,
-    padding: 11,
-  },
-  courseCardTitle: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  courseCardLevel: {
-    color: '#CAC8C8',
-    fontSize: 10,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
     marginBottom: 8,
+    backgroundColor: '#FFFFFF'
   },
-  courseCardFooter: {
+  moduloNumber: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    color: '#EE964B',
+    marginRight: 12,
+    minWidth: 20
+  },
+  moduloContent: {
+    flex: 1
+  },
+  moduloTitle: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '500',
+    color: '#1B1B1B',
+    marginBottom: 4
+  },
+  moduloDuracion: {
+    fontSize: 14,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+    color: '#7E7E7E'
+  },
+
+  paymentTitle: {
+    fontSize: 20,
+    fontFamily: 'Inter',
+    fontWeight: '600',
+    color: '#1B1B1B',
+    marginBottom: 24,
+    marginTop: 24,
+  },
+  paymentContainer: {
+    gap: 12,
+    marginBottom: 32
+  },
+  paymentLabel: {
+    fontSize: 16,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    color: '#1B1B1B',
+    marginBottom: 8
+  },
+  paymentDropdown: {
+    height: 56,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#E1E1E1',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF'
   },
-  courseCardStats: {
+  paymentContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 12
   },
-  courseCardStatText: {
-    color: '#CAC8C8',
-    fontSize: 14,
+  cardIcon: {
+    width: 44,
+    height: 32,
+    resizeMode: 'cover',
+    borderRadius: 4
+  },
+  cardText: {
+    fontSize: 16,
     fontFamily: 'Roboto',
+    fontWeight: '500',
+    color: '#1B1B1B'
   },
-  courseCardRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  courseCardRatingText: {
-    color: '#CAC8C8',
-    fontSize: 14,
-    fontFamily: 'Roboto',
-  },
-  enrollButton: {
+  actionButtons: {
     position: 'absolute',
     bottom: 38,
     left: 28,
     right: 28,
-    height: 66,
-    backgroundColor: '#EE964B',
-    borderRadius: 20,
     flexDirection: 'row',
+    gap: 12
+  },
+  backButton: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    height: 66,
+    borderWidth: 1,
+    borderColor: '#E1E1E1'
+  },
+  backButtonText: {
+    fontSize: 18,
+    fontFamily: 'Roboto',
+    fontWeight: '600',
+    color: '#7E7E7E'
+  },
+  enrollButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    backgroundColor: '#EE964B',
+    borderRadius: 16,
+    height: 66,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 13,
+      height: 8
     },
-    shadowOpacity: 0.12,
-    shadowRadius: 26,
-    elevation: 5,
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8
   },
   enrollButtonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'Roboto',
-    fontWeight: '500',
-  },
-}); 
+    fontWeight: '600',
+    color: '#FFFFFF'
+  }
+})

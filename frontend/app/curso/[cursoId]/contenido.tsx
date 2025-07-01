@@ -28,15 +28,27 @@ export default function CursoContenidoScreen() {
   return (
     <CustomScreenView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Image source={{ uri: course.imagen ?? '' }} style={styles.courseImage} />
-        <Text style={styles.sectionTitle}>Contenido</Text>
-        <Text style={styles.contentDescription}>{course.descripcion}</Text>
+        <View style={styles.spacer} />
+        
+        <Image 
+          source={{ uri: course.imagen ?? 'https://picsum.photos/id/374/210' }} 
+          style={styles.courseImage} 
+        />
+        
+        <View style={styles.contentHeader}>
+          <Text style={styles.sectionTitle}>Contenido</Text>
+        </View>
+        
+        <Text style={styles.contentDescription}>
+          Clases en vivo por videoconferencia, interactúa con el instructor en tiempo real y accede a material digital.
+        </Text>
+        
         <View style={styles.modulesContainer}>
           {course.modulos?.map((modulo, index) => (
             <TouchableOpacity
               key={index}
               style={styles.moduleItem}
-              onPress={() => router.push(`/curso/${cursoId}/modulo/${modulo.idModulo}`)}
+              onPress={() => router.push(`/curso/${cursoId}/${modulo.idModulo}`)}
             >
               <Text style={styles.moduleNumber}>{index + 1}.</Text>
               <Text style={styles.moduleTitle}>{modulo.titulo}</Text>
@@ -54,18 +66,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     padding: 28,
   },
+  spacer: {
+    width: 100,
+    height: 12,
+    backgroundColor: '#FFFFFF',
+  },
   courseImage: {
     width: '100%',
     height: 210,
     resizeMode: 'cover',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  contentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    gap: 16,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 22,
     fontFamily: 'Inter',
     fontWeight: '600',
     color: '#1B1B1B',
-    marginBottom: 16,
   },
   contentDescription: {
     fontSize: 18,
@@ -73,14 +96,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#A5A5A5',
     lineHeight: 24,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   modulesContainer: {
-    gap: 16,
+    gap: 12,
   },
   moduleItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 22,
     padding: 22,
     borderWidth: 1,
     borderColor: '#E1E1E1',
@@ -91,7 +116,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
     fontWeight: '500',
     color: '#A5A5A5',
-    marginRight: 8,
   },
   moduleTitle: {
     flex: 1,

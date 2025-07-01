@@ -100,6 +100,23 @@ export interface PasoCreateInput {
 }
 
 // Course types
+export interface Cronograma {
+  idCronograma: number;
+  idSede: number;
+  idCurso: number;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  vacantesDisponibles: number | null;
+  sede?: {
+    idSede: number;
+    nombreSede: string;
+    direccionSede: string;
+    telefonoSede: string | null;
+    mailSede: string | null;
+    whatsApp: string | null;
+  };
+}
+
 export interface CourseCreateInput {
   descripcion?: string;
   contenidos?: string;
@@ -110,6 +127,7 @@ export interface CourseCreateInput {
   titulo?: string;
   dificultad?: string;
   modulos?: ModuleCreateInput[];
+  cronogramas?: Cronograma[];
 }
 
 export interface ModuleCreateInput {

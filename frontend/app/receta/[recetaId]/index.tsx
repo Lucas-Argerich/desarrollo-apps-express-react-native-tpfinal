@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Alert } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import CustomScreenView from '@/components/CustomScreenView'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -9,10 +9,21 @@ import Hero from '@/components/ui/Hero'
 import { useReceta } from '@/contexts/RecetaContext'
 import { authService } from '@/services/auth'
 import { capitalize } from '@/utils'
+import IngredientUtensilList from '@/components/IngredientUtensilList'
 
 export default function RecetaScreen() {
   const { recetaId: id } = useLocalSearchParams()
-  const { receta, setReceta, loading, setLoading, servings, setServings, isFavorite, toggleFavorite, checkFavoriteStatus } = useReceta()
+  const {
+    receta,
+    setReceta,
+    loading,
+    setLoading,
+    servings,
+    setServings,
+    isFavorite,
+    toggleFavorite,
+    checkFavoriteStatus
+  } = useReceta()
   const [isOwner, setIsOwner] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
 
@@ -87,30 +98,26 @@ export default function RecetaScreen() {
 
   const handleDeleteRecipe = async () => {
     // Show confirmation dialog and delete recipe
-    Alert.alert(
-      'Eliminar Receta',
-      '¿Estás seguro de que quieres eliminar esta receta?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel'
-        },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const recipeId = Array.isArray(id) ? id[0] : id
-              await api('/recipes/:id', 'DELETE', { params: { id: recipeId } })
-              router.back()
-            } catch (error) {
-              console.error('Error deleting recipe:', error)
-              Alert.alert('Error', 'Error al eliminar la receta')
-            }
+    Alert.alert('Eliminar Receta', '¿Estás seguro de que quieres eliminar esta receta?', [
+      {
+        text: 'Cancelar',
+        style: 'cancel'
+      },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const recipeId = Array.isArray(id) ? id[0] : id
+            await api('/recipes/:id', 'DELETE', { params: { id: recipeId } })
+            router.back()
+          } catch (error) {
+            console.error('Error deleting recipe:', error)
+            Alert.alert('Error', 'Error al eliminar la receta')
           }
         }
-      ]
-    )
+      }
+    ])
   }
 
   if (loading) {
@@ -137,7 +144,12 @@ export default function RecetaScreen() {
     <>
       <CustomScreenView style={styles.container}>
         {/* Hero Image */}
-        <Hero image={receta.fotoPrincipal} state="open" isSaved={isFavorite} toggleSaved={toggleFavorite}>
+        <Hero
+          image={receta.fotoPrincipal}
+          state="open"
+          isSaved={isFavorite}
+          toggleSaved={toggleFavorite}
+        >
           <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
             {capitalize(receta.nombreReceta)}
           </Text>
@@ -175,13 +187,15 @@ export default function RecetaScreen() {
               <View style={styles.iconContainer}>
                 <Ionicons name="time-outline" size={16} color="#7E7E7E" />
               </View>
-              <Text style={styles.infoText}>{receta.porciones} porciones</Text>
+              <Text style={styles.infoText}>{receta.porciones} Porciones</Text>
             </View>
             <View style={styles.infoItem}>
               <View style={styles.iconContainer}>
                 <Ionicons name="restaurant-outline" size={16} color="#7E7E7E" />
               </View>
-              <Text style={styles.infoText}>fácil</Text>
+              <Text style={styles.infoText}>
+                {receta.pasos.length < 5 ? 'Fácil' : 'Intermedio'}
+              </Text>
             </View>
           </View>
           <View style={styles.infoColumn}>
@@ -190,7 +204,7 @@ export default function RecetaScreen() {
                 <Ionicons name="person-outline" size={16} color="#7E7E7E" />
               </View>
               <Text style={styles.infoText}>
-                {receta.cantidadPersonas} persona{receta.cantidadPersonas > 1 ? 's' : ''}
+                {receta.cantidadPersonas} Persona{receta.cantidadPersonas > 1 ? 's' : ''}
               </Text>
             </View>
             <View style={styles.infoItem}>
@@ -233,67 +247,23 @@ export default function RecetaScreen() {
         </View>
 
         {/* Ingredients */}
-        <Text style={styles.sectionTitle}>
-          Ingredientes
-          {(servings ?? 0) !== receta.cantidadPersonas && servings && (
-            <Text style={styles.scaledIndicator}>
-              {' '}
-              (ajustado para {servings} persona{servings > 1 ? 's' : ''})
-            </Text>
-          )}
-        </Text>
-        <FlatList
-          data={getScaledIngredients()}
-          keyExtractor={(item) => item.idUtilizado.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => (
-            <View style={styles.ingredientCard}>
-              <Image
-                source={{ uri: 'https://picsum.photos/113/93' }}
-                style={styles.ingredientImage}
-              />
-              <View style={styles.ingredientInfo}>
-                <Text style={styles.ingredientName}>{item.nombre}</Text>
-                <Text style={styles.ingredientAmount}>
-                  {item.cantidad} {item.unidad}
-                </Text>
-              </View>
-            </View>
-          )}
+        <IngredientUtensilList
+          title="Ingredientes"
+          items={getScaledIngredients()}
+          servings={typeof servings === 'number' ? servings : undefined}
+          originalServings={
+            typeof receta.cantidadPersonas === 'number' ? receta.cantidadPersonas : undefined
+          }
         />
 
         {/* Utensils */}
-        <Text style={styles.sectionTitle}>
-          Utencilios
-          {(servings ?? 0) !== receta.cantidadPersonas && servings && (
-            <Text style={styles.scaledIndicator}>
-              {' '}
-              (ajustado para {servings} persona{servings > 1 ? 's' : ''})
-            </Text>
-          )}
-        </Text>
-        <FlatList
-          data={getScaledUtensils()}
-          keyExtractor={(item) => item.idUtilizado.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalList}
-          renderItem={({ item }) => (
-            <View style={styles.ingredientCard}>
-              <Image
-                source={{ uri: 'https://picsum.photos/113/93' }}
-                style={styles.ingredientImage}
-              />
-              <View style={styles.ingredientInfo}>
-                <Text style={styles.ingredientName}>{item.nombre}</Text>
-                <Text style={styles.ingredientAmount}>
-                  {item.cantidad} {item.unidad}
-                </Text>
-              </View>
-            </View>
-          )}
+        <IngredientUtensilList
+          title="Utencilios"
+          items={getScaledUtensils()}
+          servings={typeof servings === 'number' ? servings : undefined}
+          originalServings={
+            typeof receta.cantidadPersonas === 'number' ? receta.cantidadPersonas : undefined
+          }
         />
 
         {/* Reviews */}
@@ -320,10 +290,12 @@ export default function RecetaScreen() {
           <Text style={styles.viewAllText}>Ver todas</Text>
         </TouchableOpacity>
       </CustomScreenView>
-      { userRole === 'alumno' && <ActionButton onPress={() => router.push(`/receta/${id}/pasos`)}>
-        <Text style={styles.startButtonText}>Empezar</Text>
-        <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-      </ActionButton>}
+      {userRole === 'alumno' && (
+        <ActionButton onPress={() => router.push(`/receta/${id}/pasos`)}>
+          <Text style={styles.startButtonText}>Empezar</Text>
+          <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+        </ActionButton>
+      )}
     </>
   )
 }
@@ -411,7 +383,7 @@ const styles = StyleSheet.create({
   },
   ingredientCard: {
     width: 113,
-    height: 177,
+    height: 120,
     backgroundColor: 'rgba(238,150,75,0.6)',
     borderRadius: 16,
     overflow: 'hidden',
@@ -431,13 +403,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Roboto',
     fontWeight: '600',
-    fontSize: 14
+    fontSize: 16
   },
   ingredientAmount: {
     color: '#FFFFFF',
     fontFamily: 'Roboto',
     fontWeight: '500',
-    fontSize: 14
+    fontSize: 32,
+    marginLeft: 8,
+    marginTop: 8
   },
   servingsContainer: {
     flexDirection: 'row',

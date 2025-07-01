@@ -27,6 +27,7 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
         cursoExtra: true,
         cronogramas: {
           include: {
+            sede: true,
             asistencias: {
               include: {
                 alumno: true
@@ -55,6 +56,7 @@ export const getCourse = async (req: AuthRequest, res: Response) => {
           modulos: true,
           cronogramas: {
             include: {
+              sede: true,
               asistencias: {
                 include: {
                   alumno: true
@@ -131,6 +133,16 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
               createMany: {
                 data: courseData.modulos
               }
+            }
+          : undefined,
+        cronogramas: courseData.cronogramas
+          ? {
+              create: courseData.cronogramas.map(cronograma => ({
+                idSede: cronograma.idSede,
+                fechaInicio: cronograma.fechaInicio ? new Date(cronograma.fechaInicio) : null,
+                fechaFin: cronograma.fechaFin ? new Date(cronograma.fechaFin) : null,
+                vacantesDisponibles: cronograma.vacantesDisponibles
+              }))
             }
           : undefined
       }
@@ -253,6 +265,7 @@ export const getSubscribedCourses = async (req: AuthRequest, res: Response) => {
         cursoExtra: true,
         cronogramas: {
           include: {
+            sede: true,
             asistencias: {
               include: { alumno: true },
               distinct: ['idAlumno']
@@ -283,6 +296,7 @@ export const getCreatedCourses = async (req: AuthRequest, res: Response) => {
         cursoExtra: true,
         cronogramas: {
           include: {
+            sede: true,
             asistencias: {
               include: { alumno: true },
               distinct: ['idAlumno']
@@ -305,9 +319,17 @@ export const courseParse = (
         modulos: true,
         cronogramas: {
           include: {
+            sede: true,
             asistencias: {
               include: {
-                alumno: true
+                alumno: {
+                  select: {
+                    idAlumno: true,
+                    nombre: true,
+                    nickname: true,
+                    mail: true
+                  }
+                }
               },
               distinct: ['idAlumno']
             }
@@ -333,6 +355,72 @@ export const courseParse = (
     imagen: course.cursoExtra?.imagen || null,
     modulos: course.modulos || null,
     alumnos,
-    calificacion
+    calificacion,
+    cronogramas: course.cronogramas?.map(cronograma => ({
+      idCronograma: cronograma.idCronograma,
+      idSede: cronograma.idSede,
+      idCurso: cronograma.idCurso,
+      fechaInicio: cronograma.fechaInicio?.toISOString() || null,
+      fechaFin: cronograma.fechaFin?.toISOString() || null,
+      vacantesDisponibles: cronograma.vacantesDisponibles,
+      sede: cronograma.sede ? {
+        idSede: cronograma.sede.idSede,
+        nombreSede: cronograma.sede.nombreSede,
+        direccionSede: cronograma.sede.direccionSede,
+        telefonoSede: cronograma.sede.telefonoSede,
+        mailSede: cronograma.sede.mailSede,
+        whatsApp: cronograma.sede.whatsApp
+      } : undefined
+    }))
+  }
+}
+
+export const deleteCourse = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' })
+      return
+    }
+
+    const courseId = Number(req.params.id)
+
+    // Check if course exists and user owns it
+    const existingCourse = await prisma.curso.findUnique({
+      where: { idCurso: courseId },
+      include: { usuario: true }
+    })
+
+    if (!existingCourse) {
+      res.status(404).json({ error: 'Curso no encontrado' })
+      return
+    }
+
+    if (existingCourse.idUsuario !== req.user.idUsuario) {
+      res.status(403).json({ error: 'No tienes permisos para eliminar este curso' })
+      return
+    }
+
+    // Delete all related data in the correct order
+    await prisma.asistenciaCurso.deleteMany({
+      where: { cronograma: { idCurso: courseId } }
+    })
+
+    await prisma.cronogramaCurso.deleteMany({
+      where: { idCurso: courseId }
+    })
+
+    await prisma.modulo.deleteMany({
+      where: { idCurso: courseId }
+    })
+
+    // Finally delete the course
+    await prisma.curso.delete({
+      where: { idCurso: courseId }
+    })
+
+    res.json({ message: 'Curso eliminado correctamente' })
+  } catch (error) {
+    console.error('Error deleting course:', error)
+    res.status(500).json({ error: 'Error al eliminar el curso' })
   }
 }

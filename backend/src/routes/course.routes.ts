@@ -3,6 +3,7 @@ import {
   getCourses,
   getCourse,
   createCourse,
+  deleteCourse,
   registerForCourse,
   unregisterFromCourse,
   getSubscribedCourses,
@@ -18,6 +19,7 @@ router.get('/:id', getCourse);
 
 // Protected routes
 router.post('/', auth, requireRole(['profesor']), createCourse);
+router.delete('/:id', auth, requireRole(['profesor']), deleteCourse);
 router.post('/:id/register', auth, requireRole(['alumno']), registerForCourse);
 router.delete('/:id/register', auth, requireRole(['alumno']), unregisterFromCourse);
 router.get('/user/subscribed', auth, requireRole(['alumno']), getSubscribedCourses);
