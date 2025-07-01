@@ -46,6 +46,10 @@ export interface UpdateUserInput {
   password?: string;
   direccion?: string;
   avatar?: string;
+  numeroTarjeta?: string;
+  vencimientoTarjeta?: string;
+  CVVTarjeta?: string;
+  numeroTramite?: string;
 }
 
 export interface RequestPasswordResetInput {

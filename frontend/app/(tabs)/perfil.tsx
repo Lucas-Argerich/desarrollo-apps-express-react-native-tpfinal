@@ -8,6 +8,8 @@ import CustomScreenView from '../../components/CustomScreenView'
 import { authService } from '../../services/auth'
 import { router } from 'expo-router'
 import { getUserCourses, getUserFavoriteRecipes, getUserCreatedRecipes, getUserCreatedCourses } from '../../services/api'
+import * as ImagePicker from 'expo-image-picker'
+import Input from '../../components/ui/Input'
 
 export default function PerfilScreen() {
   const [user, setUser] = useState<any>(null)
@@ -15,6 +17,16 @@ export default function PerfilScreen() {
   const [coursesLength, setCoursesLength] = useState<number>(0)
   const [recipesLength, setRecipesLength] = useState<number>(0)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [showStudentForm, setShowStudentForm] = useState(false)
+  const [studentForm, setStudentForm] = useState({
+    cardNumber: '',
+    cardExpiry: '',
+    cardCVV: '',
+    tramiteNumber: '',
+    dniFront: undefined,
+    dniBack: undefined,
+  })
+  const [studentLoading, setStudentLoading] = useState(false)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -54,6 +66,50 @@ export default function PerfilScreen() {
   }, [user])
 
   const isProfesor = user?.rol === 'profesor'
+
+  const handleStudentInputChange = (field: string, value: any) => {
+    setStudentForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  const pickImage = async (type: string) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    })
+    if (!result.canceled) {
+      handleStudentInputChange(type === 'front' ? 'dniFront' : 'dniBack', result.assets[0])
+    }
+  }
+
+  const handleConvertToStudent = async () => {
+    // Validate fields
+    if (!studentForm.cardNumber || !studentForm.cardExpiry || !studentForm.cardCVV || !studentForm.tramiteNumber || !studentForm.dniFront || !studentForm.dniBack) {
+      alert('Por favor completa todos los campos y sube ambas imágenes del DNI.')
+      return
+    }
+    setStudentLoading(true)
+    try {
+      await authService.convertToStudent({
+        numeroTarjeta: studentForm.cardNumber,
+        vencimientoTarjeta: studentForm.cardExpiry,
+        CVVTarjeta: studentForm.cardCVV,
+        numeroTramite: studentForm.tramiteNumber,
+        dniFront: studentForm.dniFront,
+        dniBack: studentForm.dniBack,
+      })
+      alert('¡Ahora eres estudiante!')
+      // Refresh user info
+      const updatedUser = await authService.getUser()
+      setUser(updatedUser)
+      setShowStudentForm(false)
+    } catch (err) {
+      alert('Error al convertir a estudiante: ' + (err))
+    } finally {
+      setStudentLoading(false)
+    }
+  }
 
   if (loading || statsLoading) {
     return (
@@ -103,10 +159,63 @@ export default function PerfilScreen() {
         <Text style={styles.profileName}>{user.nombre || user.name}</Text>
         <Text style={styles.profileEmail}>{user.email}</Text>
 
-        <Button onPress={() => {}} style={styles.editButton} textStyle={styles.editButtonText}>
-          Editar perfil
-          <MaterialIcons name="edit" size={24} color="#FFF" />
-        </Button>
+        { user.rol !== 'alumno' && !showStudentForm && (
+          <Button onPress={() => setShowStudentForm(true)} style={styles.editButton} textStyle={styles.editButtonText}>
+            Convertir a Estudiante
+          </Button>
+        )}
+        {showStudentForm && (
+          <View style={{ width: '100%', marginTop: 16, gap: 12 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>Datos para ser Estudiante</Text>
+            <Input
+              label="Número de Tarjeta"
+              placeholder="XXXX XXXX XXXX XXXX"
+              value={studentForm.cardNumber}
+              onChangeText={v => handleStudentInputChange('cardNumber', v)}
+              keyboardType="number-pad"
+              maxLength={16}
+            />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Input
+                label="Vencimiento"
+                placeholder="MM/AA"
+                value={studentForm.cardExpiry}
+                onChangeText={v => handleStudentInputChange('cardExpiry', v)}
+                maxLength={5}
+              />
+              <Input
+                label="CVV"
+                placeholder="XXX"
+                value={studentForm.cardCVV}
+                onChangeText={v => handleStudentInputChange('cardCVV', v)}
+                keyboardType="number-pad"
+                maxLength={3}
+                secureTextEntry
+              />
+            </View>
+            <Input
+              label="Número de Trámite"
+              placeholder="Número de trámite del DNI"
+              value={studentForm.tramiteNumber}
+              onChangeText={v => handleStudentInputChange('tramiteNumber', v)}
+              keyboardType="number-pad"
+            />
+            <View style={{ flexDirection: 'row', gap: 12, marginVertical: 16 }}>
+              <Button onPress={() => pickImage('front')} style={{ flex: 1, backgroundColor: '#EE964B' }}>
+                {studentForm.dniFront ? 'DNI Frente ✓' : 'Subir DNI Frente'}
+              </Button>
+              <Button onPress={() => pickImage('back')} style={{ flex: 1, backgroundColor: '#EE964B' }}>
+                {studentForm.dniBack ? 'DNI Dorso ✓' : 'Subir DNI Dorso'}
+              </Button>
+            </View>
+            <Button onPress={handleConvertToStudent} loading={studentLoading}>
+              Confirmar y Convertirme en Estudiante
+            </Button>
+            <Button onPress={() => setShowStudentForm(false)} style={{ marginTop: 8, backgroundColor: '#eee' }} textStyle={{ color: '#333' }}>
+              Cancelar
+            </Button>
+          </View>
+        )}
       </View>
 
       <View style={styles.statsSection}>
@@ -208,11 +317,12 @@ const styles = StyleSheet.create({
     gap: 10,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    flexDirection: 'row'
   },
   editButtonText: {
     fontSize: 16,
-    color: '#FFF'
+    color: '#FFF',
   },
   profileSection: {
     alignItems: 'center',

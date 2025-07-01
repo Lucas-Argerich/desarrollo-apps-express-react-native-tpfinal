@@ -182,5 +182,38 @@ export const authService = {
       const error = await response.json()
       throw new Error(error.error || 'Error al restablecer contraseña')
     }
+  },
+
+  async convertToStudent(studentData: StudentRegistrationData): Promise<void> {
+    const files = {
+      dniFront: {
+        uri: studentData.dniFront.uri,
+        name: studentData.dniFront.fileName || studentData.dniFront.uri.split('/').pop() || 'dni_front.jpg',
+        type: studentData.dniFront.mimeType || 'image',
+      },
+      dniBack: {
+        uri: studentData.dniBack.uri,
+        name: studentData.dniBack.fileName || studentData.dniBack.uri.split('/').pop() || 'dni_back.jpg',
+        type: studentData.dniBack.mimeType || 'image',
+      },
+    }
+    const response = await api('/auth/user', 'PUT', {
+      data: {
+        numeroTarjeta: studentData.numeroTarjeta,
+        vencimientoTarjeta: studentData.vencimientoTarjeta,
+        CVVTarjeta: studentData.CVVTarjeta,
+        numeroTramite: studentData.numeroTramite,
+      },
+      files,
+    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al convertir a estudiante')
+    } else {
+      const data = await response.json()
+      console.log(data)
+      await AsyncStorage.setItem('token', data.token)
+      await AsyncStorage.setItem('user', JSON.stringify(data))
+    }
   }
 }

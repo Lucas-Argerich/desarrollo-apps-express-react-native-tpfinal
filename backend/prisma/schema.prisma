@@ -29,7 +29,7 @@ model Usuario {
 
 model Alumno {
   idAlumno        Int               @id
-  numeroTarjeta   String?           @db.VarChar(12)
+  numeroTarjeta   String?           @db.VarChar(24)
   dniFrente       String?           @db.Text
   dniFondo        String?           @db.Text
   tramite         String?           @db.VarChar(12)

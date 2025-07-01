@@ -487,6 +487,6 @@ const styles = StyleSheet.create({
   },
   dniUploadButton: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#EE964B',
   },
 }); 

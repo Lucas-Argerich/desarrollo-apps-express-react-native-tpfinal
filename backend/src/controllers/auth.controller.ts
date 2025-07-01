@@ -330,8 +330,11 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const { nombre, mail, password } = req.body as UpdateUserInput;
+    const { nombre, mail, password, avatar, numeroTarjeta, vencimientoTarjeta, CVVTarjeta, numeroTramite } = req.body as UpdateUserInput;
 
+    const { dniFront, dniBack } = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    try {
     const updateData: any = {};
     if (nombre) updateData.nombre = nombre;
     if (mail) updateData.mail = mail;
@@ -339,15 +342,88 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       updateData.password = await bcrypt.hash(password, 10);
     }
 
-    const user = await prisma.usuario.update({
-      where: { idUsuario: req.user.idUsuario },
-      data: updateData,
+    const alumno = await prisma.alumno.findUnique({
+      where: { idAlumno: req.user.idUsuario },
     });
 
-    res.json(user);
-  } catch (error) {
+    let frontUrl: string | undefined = undefined;
+    let backUrl: string | undefined = undefined;
+
+    if (dniFront || dniBack) {
+      const [frontResult, backResult] = await Promise.all([
+        supabase.storage
+          .from('uploads')
+          .upload(`${req.user?.mail}/front-${Date.now()}${path.extname(dniFront[0].originalname)}`, dniFront[0].buffer, {
+            contentType: dniFront[0].mimetype,
+            upsert: false,
+          }),
+        supabase.storage
+          .from('uploads')
+          .upload(`${req.user?.mail}/back-${Date.now()}${path.extname(dniBack[0].originalname)}`, dniBack[0].buffer, {
+            contentType: dniBack[0].mimetype,
+            upsert: false,
+          }),
+      ]);
+
+      if (frontResult.error || backResult.error) {
+        console.error('Error uploading files:', frontResult.error || backResult.error);
+        res.status(500).json({ error: 'Error al subir los archivos' });
+        return;
+      }
+
+      frontUrl = supabase.storage.from('uploads').getPublicUrl(frontResult.data.path).data.publicUrl;
+      backUrl = supabase.storage.from('uploads').getPublicUrl(backResult.data.path).data.publicUrl;
+    }
+
+    const user = await prisma.usuario.update({
+      where: { idUsuario: req.user.idUsuario },
+      data: {
+        nombre,
+        mail,
+        password: password ? await bcrypt.hash(password, 10) : undefined,
+        avatar: avatar ? avatar : undefined,
+        alumno: alumno ? {
+          update: {
+            numeroTarjeta,
+            tramite: numeroTramite,
+            dniFrente: frontUrl,
+            dniFondo: backUrl,
+          }
+        }
+        : {
+          create: {
+            numeroTarjeta,
+            tramite: numeroTramite,
+            dniFrente: frontUrl,
+            dniFondo: backUrl,
+          }
+        },
+      },
+      include: { alumno: true },
+    });
+
+    const token = jwt.sign(
+      { id: user.idUsuario, email: user.mail },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      idUsuario: user.idUsuario,
+      nombre: user.nombre,
+      nickname: user.nickname,
+      mail: user.mail,
+      avatar: user.avatar,
+      token,
+      rol: user.alumno ? 'alumno' : 'profesor',
+    });  } catch (error) {
+    console.error('Error actualizando usuario:', error);
     res.status(500).json({ error: 'Error actualizando usuario' });
   }
+} catch (error) {
+  console.error('Error actualizando usuario:', error);
+  res.status(500).json({ error: 'Error actualizando usuario' });
+}
 };
 
 export const requestPasswordReset = async (req: AuthRequest, res: Response) => {
