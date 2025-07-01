@@ -9,10 +9,10 @@ import Tabs from '@/components/ui/Tabs';
 import CustomScreenView from '@/components/CustomScreenView';
 
 // Types for API response
-interface SearchResultApi {
+type SearchResultApi = {
   recipes: { recipe: Receta, queryMatch: number }[];
   courses: { course: Curso, queryMatch: number }[];
-}
+};
 
 type FilterType = 'todos' | 'recetas' | 'cursos' | 'ingredientes';
 
@@ -53,8 +53,8 @@ export default function BusquedaScreen() {
     let typeParam = undefined;
     if (activeFilter === 'recetas') typeParam = 'recipe';
     if (activeFilter === 'cursos') typeParam = 'course';
+    if (activeFilter === 'ingredientes') typeParam = 'ingrediente';
     
-    // ingredientes not supported in backend, so skip
     api('/search', 'GET', {
       query: {
         q: searchQuery,
@@ -103,13 +103,19 @@ export default function BusquedaScreen() {
     mixedResults = [
       ...results.courses.map((c) => ({ type: 'course' as const, data: c.course, queryMatch: c.queryMatch })),
       ...results.recipes.map((r) => ({ type: 'recipe' as const, data: r.recipe, queryMatch: r.queryMatch })),
-    ]
+    ];
   } else if (activeFilter === 'recetas') {
     mixedResults = results.recipes.map((r) => ({ type: 'recipe' as const, data: r.recipe, queryMatch: r.queryMatch }));
   } else if (activeFilter === 'cursos') {
     mixedResults = results.courses.map((c) => ({ type: 'course' as const, data: c.course, queryMatch: c.queryMatch }));
-  }
-  mixedResults.sort((a, b) => b.queryMatch - a.queryMatch)
+  } else if (activeFilter === 'ingredientes') {
+    // Filter recipes that have the ingredient in their ingredients list
+    mixedResults = [
+      ...results.courses.map((c) => ({ type: 'course' as const, data: c.course, queryMatch: c.queryMatch })),
+      ...results.recipes.map((r) => ({ type: 'recipe' as const, data: r.recipe, queryMatch: r.queryMatch })),
+    ];  }
+    console.log(mixedResults)
+  mixedResults.sort((a, b) => b.queryMatch - a.queryMatch);
 
   const renderResults = () => {
     if (loading) {
@@ -128,10 +134,10 @@ export default function BusquedaScreen() {
       );
     }
 
-    if (activeFilter === 'ingredientes') {
+    if (activeFilter === 'ingredientes' && mixedResults.length === 0) {
       return (
         <View style={styles.centerContainer}>
-          <Text style={styles.placeholderText}>La búsqueda de ingredientes no está disponible.</Text>
+          <Text style={styles.placeholderText}>No se encontraron recetas con ese ingrediente.</Text>
         </View>
       );
     }
