@@ -118,7 +118,7 @@ export default function RecetaPasosScreen() {
         {/* Template image with seed of i */}
         <View style={styles.stepImageContainer}>
           <Image
-            source={{ uri: `https://picsum.photos/seed/foto${currentStepIndex}/200/243` }}
+            source={{ uri: `https://picsum.photos/seed/foto${currentStepIndex}/243/243` }}
             style={styles.stepImage}
           />
         </View>
