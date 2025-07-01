@@ -88,11 +88,11 @@ export const initialRegister = async (req: AuthRequest, res: Response) => {
       .setFrom(sentFrom)
       .setTo(recipients)
       .setSubject('Código de verificación')
-      .setTemplateId('verification-code-template-id') // Replace with your template ID
+      .setTemplateId('zr6ke4ne7894on12') // Replace with your template ID
       .setPersonalization([{ email: mail, data: { name: nickname, code: codigoVerificacion } }]);
 
     console.log('Verification code: ', codigoVerificacion);
-    //await mailerSend.email.send(emailParams);
+    await mailerSend.email.send(emailParams);
 
     res.status(201).json({ message: 'Código de verificación enviado' });
   } catch (error) {
@@ -330,7 +330,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const { nombre, mail, password, avatar, numeroTarjeta, vencimientoTarjeta, CVVTarjeta, numeroTramite } = req.body as UpdateUserInput;
+    const { nombre, mail, avatar, numeroTarjeta, vencimientoTarjeta, CVVTarjeta, numeroTramite } = req.body as UpdateUserInput;
 
     const { dniFront, dniBack } = req.files as { [fieldname: string]: Express.Multer.File[] };
 
@@ -338,9 +338,6 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     const updateData: any = {};
     if (nombre) updateData.nombre = nombre;
     if (mail) updateData.mail = mail;
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
-    }
 
     const alumno = await prisma.alumno.findUnique({
       where: { idAlumno: req.user.idUsuario },
@@ -380,7 +377,6 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       data: {
         nombre,
         mail,
-        password: password ? await bcrypt.hash(password, 10) : undefined,
         avatar: avatar ? avatar : undefined,
         alumno: alumno ? {
           update: {
@@ -462,7 +458,7 @@ export const requestPasswordReset = async (req: AuthRequest, res: Response) => {
       .setTo(recipients)
       .setSubject('Recuperación de contraseña')
       .setTemplateId('3z0vkloj6p7g7qrx')
-      .setPersonalization([{ email: mail || '', data: { name: user.nombre || '', token: resetToken } }]);
+      .setPersonalization([{ email: mail || '', data: { name: user.nombre || '', code: resetToken } }]);
 
     //await mailerSend.email.send(emailParams);
 

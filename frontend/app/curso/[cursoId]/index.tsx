@@ -168,10 +168,6 @@ const Page = () => {
       {/* Owner Actions */}
       {isCreator && (
         <View style={styles.ownerActions}>
-          <TouchableOpacity style={styles.editButton} onPress={handleEditCourse}>
-            <Ionicons name="create-outline" size={20} color="#EE964B" />
-            <Text style={styles.editButtonText}>Editar</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteCourse}>
             <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
             <Text style={styles.deleteButtonText}>Eliminar</Text>
