@@ -6,37 +6,28 @@ import Hero from '@/components/ui/Hero'
 import Select from '@/components/ui/Select'
 import { useLocalSearchParams, router } from 'expo-router'
 import { api } from '@/services/api'
-import { Curso, Cronograma } from '@/utils/types'
-import { authService } from '@/services/auth'
+import { Cronograma } from '@/utils/types'
 import { capitalize } from '@/utils'
+import { useCurso } from '../../../contexts/CursoContext'
 
-export default function CursoInscripcionScreen() {
+const Page = () => {
+  const { course, user, loading } = useCurso();
   const { cursoId } = useLocalSearchParams()
-  const [course, setCourse] = useState<Curso | null>(null)
   const [cronograma, setCronograma] = useState<Cronograma[]>([])
   const [selectedSchedule, setSelectedSchedule] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
   const [enrolling, setEnrolling] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get user data
-        const userData = await authService.getUser()
-        setUser(userData)
-
         if (cursoId && typeof cursoId === 'string') {
           // Get course data
           const courseResponse = await api('/courses/:id', 'GET', { params: { id: cursoId } })
           const courseData = await courseResponse.json()
-          setCourse(courseData)
           setCronograma(courseData.cronogramas)
         }
       } catch (error) {
         console.error('Error fetching data:', error)
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -57,7 +48,14 @@ export default function CursoInscripcionScreen() {
     setEnrolling(true)
     try {
       const courseId = Array.isArray(cursoId) ? cursoId[0] : cursoId
-      await api('/courses/:id/register', 'POST', { params: { id: courseId } })
+      const res = await api('/courses/:id/register', 'POST', { params: { id: courseId }, 
+        data: {
+          idCronograma: parseInt(selectedSchedule)
+        } 
+      })
+      if (!res.ok) {
+        throw (await res.json())
+      }
       Alert.alert('Éxito', 'Te has inscrito correctamente en el curso', [
         { text: 'OK', onPress: () => router.back() }
       ])
@@ -94,13 +92,14 @@ export default function CursoInscripcionScreen() {
           <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
             {capitalize(course.titulo ?? '')}
           </Text>
-          <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
-            <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
+          <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'relative' }}>
+            <View style={{ display: 'flex', flexDirection: 'row', gap: 4, position: 'absolute', top: '-80%' }}>
               <Text style={{ color: '#fff', fontSize: 16 }}>
                 {course.calificacion?.toFixed(1) ?? '4.8'}
               </Text>
               <Ionicons name="star" size={16} color="#fff" />
             </View>
+            <Text style={{ color: "#fff", fontSize: 24, fontWeight: 500 }}>${course.precio}</Text>
           </View>
         </Hero>
 
@@ -121,7 +120,7 @@ export default function CursoInscripcionScreen() {
           {course.duracion && (
             <View style={styles.modalidadContainer}>
               <Text style={styles.modalidadLabel}>Carga Horaria</Text>
-              <Text style={[styles.modalidadValue, { fontSize: 18 }]}>{course.duracion} Min. por Semana</Text>
+              <Text style={[styles.modalidadValue, { fontSize: 18 }]}>{course.duracion} min. por Semana</Text>
             </View>
           )}
 
@@ -139,23 +138,7 @@ export default function CursoInscripcionScreen() {
                 <Text style={styles.cronogramaLabel}>Horarios Disponibles</Text>
                 <Select
                   value={selectedSchedule}
-                  options={cronograma.map(c => {
-                    if (!c.fechaInicio || !c.fechaFin) return 'Horario no disponible'
-                    
-                    const startDate = new Date(c.fechaInicio).toLocaleDateString('es-ES', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    })
-                    const endDate = new Date(c.fechaFin).toLocaleDateString('es-ES', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    })
-                    const sede = c.sede ? ` - ${c.sede.nombreSede}` : ''
-                    const vacantes = c.vacantesDisponibles ? ` (${c.vacantesDisponibles} vacantes)` : ''
-                    return `${startDate} - ${endDate}${sede}${vacantes}`
-                  })}
+                  options={cronograma.map(c => c.idCronograma.toString())}
                   onSelect={setSelectedSchedule}
                   placeholder="Selecciona un horario"
                   style={{
@@ -174,15 +157,24 @@ export default function CursoInscripcionScreen() {
                       fontWeight: '500'
                     }
                   }}
+                  renderLabel={(id) => {
+                    const c = cronograma.find(cr => cr.idCronograma.toString() === id)
+                    if (!c || !c.fechaInicio || !c.fechaFin) return 'Horario no disponible'
+                    const startDate = new Date(c.fechaInicio).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })
+                    const endDate = new Date(c.fechaFin).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })
+                    const sede = c.sede ? ` - ${c.sede.nombreSede}` : ''
+                    const vacantes = c.vacantesDisponibles ? ` (${c.vacantesDisponibles} vacantes)` : ''
+                    return `${startDate} - ${endDate}${sede}${vacantes}`
+                  }}
                 />
-              </View>
-            )}
-
-            {/* Precio Section */}
-            {course.precio && (
-              <View style={styles.precioContainer}>
-                <Text style={styles.precioLabel}>Precio</Text>
-                <Text style={styles.precioValue}>${course.precio}</Text>
               </View>
             )}
 
@@ -232,6 +224,8 @@ export default function CursoInscripcionScreen() {
     </>
   )
 }
+
+export default Page;
 
 const styles = StyleSheet.create({
   container: {

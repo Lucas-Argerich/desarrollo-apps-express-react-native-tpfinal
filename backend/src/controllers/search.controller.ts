@@ -69,12 +69,21 @@ export const search = async (req: AuthRequest, res: Response) => {
           cursoExtra: true,
           cronogramas: {
             include: {
+              sede: true,
               asistencias: {
                 include: {
                   alumno: true
                 },
                 distinct: ['idAlumno']
               }
+            }
+          },
+          usuario: {
+            select: {
+              idUsuario: true,
+              nombre: true,
+              nickname: true,
+              mail: true
             }
           }
         },

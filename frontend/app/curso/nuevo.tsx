@@ -15,8 +15,9 @@ export default function NuevoCursoScreen() {
     descripcion: '',
     modalidad: '',
     duracion: undefined,
+    precio: undefined,
     modulos: [{ titulo: '', video: '', contenido: '', orden: 1 }]
-    // dificultad, contenidos, requerimientos, precio can be added if needed
+    // dificultad, contenidos, requerimientos can be added if needed
   })
   const [imagen, setImagen] = useState<string>()
   // Dynamic arrays (not in CourseCreateInput, but used for UI)
@@ -27,7 +28,6 @@ export default function NuevoCursoScreen() {
       horario: '',
       duracion: '',
       ubicacion: '',
-      precio: '',
       cupos: ''
     }
   ])
@@ -45,7 +45,6 @@ export default function NuevoCursoScreen() {
         horario: '',
         duracion: '',
         ubicacion: '',
-        precio: '',
         cupos: ''
       }
     ])
@@ -85,6 +84,7 @@ export default function NuevoCursoScreen() {
       descripcion: '',
       modalidad: '',
       duracion: undefined,
+      precio: undefined,
       modulos: [{ titulo: '', video: '', contenido: '', orden: 1 }]
     })
     setImagen(undefined)
@@ -95,7 +95,6 @@ export default function NuevoCursoScreen() {
         horario: '',
         duracion: '',
         ubicacion: '',
-        precio: '',
         cupos: ''
       }
     ])
@@ -119,8 +118,24 @@ export default function NuevoCursoScreen() {
       let dataToSend: CourseCreateInput = {
         ...curso,
         duracion: curso.duracion ? Number(curso.duracion) : undefined,
-        modulos
-        // Add cursadas, ingredientes, utencilios if needed by backend
+        precio: curso.precio ? Number(curso.precio) : undefined,
+        modulos,
+        ingredientes: ingredientes.map(i => ({
+          nombre: i.nombre,
+          cantidad: i.cantidad ? Number(i.cantidad) : undefined,
+          unidad: i.medida
+        })),
+        utencilios: utencilios.map(u => ({
+          nombre: u.nombre,
+          cantidad: u.cantidad ? Number(u.cantidad) : undefined,
+          descripcion: u.proveido ? 'proveido' : undefined
+        })),
+        cronograma: cursadas.map((c) => ({ 
+          fechaInicio: c.fechaInicio,
+          fechaFin: c.fechaFin,
+          vacantesDisponibles: parseInt(c.cupos),
+          ubicacion: c.ubicacion
+        }))
       }
       if (
         imagen &&
@@ -266,6 +281,23 @@ export default function NuevoCursoScreen() {
         </View>
       </View>
 
+      {/* Precio del Curso */}
+      <View style={styles.inputBlock}>
+        <View style={styles.inputLabelRow}>
+          <Text style={styles.inputLabel}>Precio del Curso</Text>
+        </View>
+        <View style={styles.inputFieldRow}>
+          <TextInput
+            style={styles.inputField}
+            placeholder="$0"
+            value={curso.precio?.toString() ?? ''}
+            onChangeText={(v) => setCurso((c) => ({ ...c, precio: v ? Number(v) : undefined }))}
+            placeholderTextColor="#A5A5A5"
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
       {/* Cursadas dinámicas */}
       <Text style={styles.sectionTitle}>Información de Calendario</Text>
       {cursadas.map((c, idx) => (
@@ -330,19 +362,6 @@ export default function NuevoCursoScreen() {
               />
             </View>
             <View style={styles.cursadaColImproved}>
-              <Text style={styles.cursadaLabelImproved}>Precio</Text>
-              <TextInput
-                style={styles.cursadaInputImproved}
-                placeholder="$0"
-                value={c.precio}
-                onChangeText={(v) => updateCursada(idx, 'precio', v)}
-                placeholderTextColor="#A5A5A5"
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-          <View style={styles.cursadaRow2ColImproved}>
-            <View style={styles.cursadaColImproved}>
               <Text style={styles.cursadaLabelImproved}>Cupos Disponibles</Text>
               <TextInput
                 style={styles.cursadaInputImproved}
@@ -353,7 +372,6 @@ export default function NuevoCursoScreen() {
                 keyboardType="numeric"
               />
             </View>
-            <View style={styles.cursadaColImproved} />
           </View>
         </View>
       ))}

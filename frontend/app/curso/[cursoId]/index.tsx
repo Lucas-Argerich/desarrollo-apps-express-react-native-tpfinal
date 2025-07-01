@@ -9,61 +9,28 @@ import ActionButton from '@/components/ui/ActionButton'
 import { Ionicons } from '@expo/vector-icons'
 import Hero from '@/components/ui/Hero'
 import { capitalize } from '@/utils'
-import { authService } from '@/services/auth'
+import { useCurso } from '../../../contexts/CursoContext'
+import IngredientUtensilList from '@/components/IngredientUtensilList'
 
-export default function CursoScreen() {
+const Page = () => {
+  const { course, user, isSubscribed, isCreator, loading } = useCurso()
   const { cursoId } = useLocalSearchParams()
-  const [course, setCourse] = useState<Curso | null>(null)
-  const [loading, setLoading] = useState(true)
   const [related, setRelated] = useState<Curso[] | null>(null)
-  const [user, setUser] = useState<any>(null)
-  const [isEnrolled, setIsEnrolled] = useState(false)
-  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get user data
-        const userData = await authService.getUser()
-        setUser(userData)
-
-        if (cursoId && typeof cursoId === 'string') {
-          // Get course data
-          const courseResponse = await api('/courses/:id', 'GET', { params: { id: cursoId } })
-          const courseData = await courseResponse.json()
-          setCourse(courseData)
-
-          // Check if user is enrolled
-          if (userData) {
-            try {
-              const enrolledResponse = await api('/courses/user/subscribed', 'GET')
-              const enrolledCourses = await enrolledResponse.json()
-              const enrolled = enrolledCourses.some((c: any) => c.idCurso === courseData.idCurso)
-              setIsEnrolled(enrolled)
-
-              // Check if user is the owner
-              setIsOwner(
-                userData.id === courseData.idUsuario || userData.email === courseData.usuario?.mail
-              )
-            } catch (error) {
-              console.log('Error checking enrollment:', error)
-            }
-          }
-        }
-
         // Get related courses
         const relatedResponse = await api('/courses', 'GET', { query: { limit: 3 } })
         const relatedData = await relatedResponse.json()
         setRelated(relatedData)
       } catch (error) {
         console.error('Error fetching data:', error)
-      } finally {
-        setLoading(false)
       }
     }
 
     fetchData()
-  }, [cursoId])
+  }, [])
 
   const handleEnroll = async () => {
     if (!user) {
@@ -120,22 +87,41 @@ export default function CursoScreen() {
   return (
     <>
       <CustomScreenView>
-        <Hero image={course.imagen ?? 'https://picsum.photos/id/374/462'}>
-          <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
-            {capitalize(course.titulo ?? '')}
-          </Text>
-          <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end' }}>
-            <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
-              <Text style={{ color: '#fff', fontSize: 16 }}>
-                {course.calificacion?.toFixed(1) ?? '4.8'}
-              </Text>
-              <Ionicons name="star" size={16} color="#fff" />
-            </View>
+      <Hero image={course.imagen ?? 'https://picsum.photos/id/374/462'} state="closed">
+        <Text style={{ fontSize: 24, color: '#fff', fontWeight: 600 }}>
+          {capitalize(course.titulo ?? '')}
+        </Text>
+        <View
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            position: 'relative'
+          }}
+        >
+          <View
+            style={[
+              {
+                display: 'flex',
+                flexDirection: 'row',
+                gap: 4
+              },
+              !isSubscribed ? { position: 'absolute', top: '-80%' } : {}
+            ]}
+          >
+            <Text style={{ color: '#fff', fontSize: 16 }}>
+              {course.calificacion?.toFixed(1) ?? '4.8'}
+            </Text>
+            <Ionicons name="star" size={16} color="#fff" />
           </View>
-        </Hero>
+          {!isSubscribed && (
+            <Text style={{ color: '#fff', fontSize: 24, fontWeight: 500 }}>${course.precio}</Text>
+          )}
+        </View>
+      </Hero>
 
         {/* Owner Actions */}
-        {isOwner && (
+        {isCreator && (
           <View style={styles.ownerActions}>
             <TouchableOpacity style={styles.editButton} onPress={handleEditCourse}>
               <Ionicons name="create-outline" size={20} color="#EE964B" />
@@ -188,11 +174,8 @@ export default function CursoScreen() {
           </View>
         </View>
 
-        {/* Descripción */}
-        <Text style={styles.description}>
-          {course.descripcion ||
-            'Aprende desde cero las técnicas esenciales de la panadería artesanal. Descubre cómo hacer panes crujientes, esponjosos y llenos de sabor utilizando ingredientes naturales y procesos tradicionales.'}
-        </Text>
+        {/* Description */}
+        <Text style={styles.description}>{course.descripcion}</Text>
 
         {/* Contenido */}
         <View style={styles.tabsRow}>
@@ -206,10 +189,38 @@ export default function CursoScreen() {
           {course.modulos?.map((modulo, index) => (
             <View key={index} style={styles.moduleItem}>
               <Text style={styles.moduleNumber}>{index + 1}.</Text>
-              <Text style={styles.moduleTitle}>{modulo.titulo}</Text>
+              <Text style={styles.moduleTitle}>{capitalize(modulo.titulo)}</Text>
             </View>
           ))}
         </View>
+
+        {/* Ingredients */}
+        {course.ingredientes && course.ingredientes.length > 0 && (
+          <IngredientUtensilList
+            title="Ingredientes"
+            items={course.ingredientes.map((ing) => ({
+              idUtilizado: (ing as any).idUtilizado ?? 0,
+              nombre: (ing as any).nombre ?? '',
+              cantidad: (ing as any).cantidad ?? 1,
+              unidad: (ing as any).unidad ?? 'u',
+              observaciones: (ing as any).observaciones ?? ''
+            }))}
+          />
+        )}
+
+        {/* Utensils */}
+        {course.utencilios && course.utencilios.length > 0 && (
+          <IngredientUtensilList
+            title="Utencilios"
+            items={course.utencilios.map((ut) => ({
+              idUtilizado: (ut as any).idUtilizado ?? 0,
+              nombre: (ut as any).nombre ?? '',
+              cantidad: (ut as any).cantidad ?? 1,
+              unidad: (ut as any).unidad ?? 'u',
+              observaciones: (ut as any).observaciones ?? ''
+            }))}
+          />
+        )}
 
         {/* Cursos Relacionados */}
         <View style={styles.relatedHeaderRow}>
@@ -228,15 +239,26 @@ export default function CursoScreen() {
       </CustomScreenView>
 
       {/* Conditional Action Button */}
-      {!isOwner && !isEnrolled && user?.rol !== 'profesor' && (
+      {!isCreator && !isSubscribed && user?.rol !== 'profesor' && (
         <ActionButton onPress={handleEnroll}>
           <Text style={styles.enrollBtnText}>Inscribirse</Text>
           <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
         </ActionButton>
       )}
+      {/* If subscribed, show button to go to contenido */}
+      {isSubscribed && (
+        <View style={{ marginTop: 12 }}>
+          <ActionButton onPress={() => router.push(`/curso/${cursoId}/contenido`)}>
+            <Text style={styles.enrollBtnText}>Ir al Contenido</Text>
+            <Ionicons name="book" size={24} color="#FFFFFF" />
+          </ActionButton>
+        </View>
+      )}
     </>
   )
 }
+
+export default Page
 
 const styles = StyleSheet.create({
   loadingContainer: {

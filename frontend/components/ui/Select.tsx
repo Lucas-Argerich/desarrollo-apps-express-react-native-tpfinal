@@ -14,6 +14,7 @@ interface SelectProps {
     field?: ViewStyle
     fieldText?: TextStyle
   }
+  renderLabel?: (id: string) => string
 }
 
 const defaultStyles = StyleSheet.create({
@@ -62,7 +63,7 @@ const defaultStyles = StyleSheet.create({
   }
 })
 
-export default function Select({ value, options, onSelect, placeholder, style = {} }: SelectProps) {
+export default function Select({ value, options, onSelect, placeholder, style = {}, renderLabel }: SelectProps) {
   const [open, setOpen] = useState(false)
   return (
     <View style={{ width: '100%', position: 'relative' }}>
@@ -72,7 +73,7 @@ export default function Select({ value, options, onSelect, placeholder, style = 
         activeOpacity={0.8}
       >
         <Text style={[defaultStyles.fieldText, style.fieldText, { color: value ? '#1B1B1B' : '#848282' }]}>
-          {value || placeholder}
+          {value ? (renderLabel ? renderLabel(value) : value) : placeholder}
         </Text>
         <Ionicons name="chevron-down" size={16} color="#848282" />
       </TouchableOpacity>
@@ -88,7 +89,9 @@ export default function Select({ value, options, onSelect, placeholder, style = 
                   setOpen(false)
                 }}
               >
-                <Text style={[defaultStyles.dropdownItemText, style.dropdownItemText]}>{opt}</Text>
+                <Text style={[defaultStyles.dropdownItemText, style.dropdownItemText]}>
+                  {renderLabel ? renderLabel(opt) : opt}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>

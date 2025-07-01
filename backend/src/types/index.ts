@@ -128,6 +128,8 @@ export interface CourseCreateInput {
   dificultad?: string;
   modulos?: ModuleCreateInput[];
   cronogramas?: Cronograma[];
+  ingredientes?: IngredientCreateInput[];
+  utencilios?: UtencilCreateInput[];
 }
 
 export interface ModuleCreateInput {

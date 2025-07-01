@@ -25,11 +25,8 @@ export default function Layout() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
       {/* Course Screens */}
-      <Stack.Screen name="curso/[cursoId]" options={{ headerShown: false }} />
-      <Stack.Screen name="curso/[cursoId]/inscripcion" options={{ headerShown: false }} />
-      <Stack.Screen name="curso/[cursoId]/contenido" options={{ headerShown: false }} />
-      <Stack.Screen name="curso/[cursoId]/[moduloId]" options={{ headerShown: false }} />
-
+      <Stack.Screen name="curso" options={{ headerShown: false }} />
+      
       {/* Recipe Screens - Now using the receta layout */}
       <Stack.Screen name="receta" options={{ headerShown: false }} />
 

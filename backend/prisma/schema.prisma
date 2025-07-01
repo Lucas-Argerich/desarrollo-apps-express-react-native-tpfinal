@@ -97,6 +97,8 @@ model Utilizado {
   ingrediente   Ingrediente? @relation(fields: [idIngrediente], references: [idIngrediente])
   unidad        Unidad?      @relation(fields: [idUnidad], references: [idUnidad])
   utencilio     Utencilio?   @relation(fields: [idUtencilio], references: [idUtencilio])
+  idCursoExtra  Int?
+  cursoExtra    CursoExtra?  @relation(fields: [idCursoExtra], references: [idCurso])
 }
 
 model Calificacion {
@@ -179,6 +181,7 @@ model CursoExtra {
   titulo     String?
   dificultad String?
   imagen     String?
+  utilizados Utilizado[]
 }
 
 model Modulo {

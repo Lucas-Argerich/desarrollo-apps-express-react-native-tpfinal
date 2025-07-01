@@ -134,6 +134,9 @@ export interface Curso {
   calificacion?: number
   modulos?: Modulo[]
   cronogramas?: Cronograma[]
+  autor?: Usuario
+  ingredientes?: Ingrediente[]
+  utencilios?: Utencilio[]
 }
 
 export interface Modulo {
@@ -156,6 +159,14 @@ export interface CourseCreateInput {
   titulo?: string;
   dificultad?: string;
   modulos?: ModuleCreateInput[];
+  cronograma?: {
+    fechaInicio?: string;
+    fechaFin?: string;
+    vacantesDisponibles?: number;
+    ubicacion?: string
+  }[];
+  ingredientes?: { nombre: string; cantidad?: number; unidad?: string }[];
+  utencilios?: { nombre: string; cantidad?: number; descripcion?: string }[];
 }
 
 export interface ModuleCreateInput {
