@@ -115,6 +115,14 @@ export default function RecetaPasosScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Template image with seed of i */}
+        <View style={styles.stepImageContainer}>
+          <Image
+            source={{ uri: `https://picsum.photos/seed/foto${currentStepIndex}/200/243` }}
+            style={styles.stepImage}
+          />
+        </View>
+
         {/* Step Description */}
         <Text style={styles.stepDescription}>
           {currentStep?.texto || 'Descripción del paso no disponible'}
@@ -155,9 +163,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF'
   },
   stepImage: {
-    width: '100%',
-    height: 243,
-    resizeMode: 'cover'
+    width: '80%',
+    height: 200,
+    resizeMode: 'cover',
+    borderRadius: 20,
+    margin: 'auto',
+    backgroundColor: '#ccc'
   },
   navigationHeader: {
     flexDirection: 'row',
