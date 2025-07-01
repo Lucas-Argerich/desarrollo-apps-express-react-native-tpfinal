@@ -502,6 +502,16 @@ export const updateRecipe = async (req: AuthRequest, res: Response) => {
           create: [
             ...recipeData.ingredientes.filter((f) => f.nombre !== undefined).map((ing) => ({
               cantidad: ing.cantidad ?? 1,
+              unidad: {
+                connectOrCreate: {
+                  where: {
+                    descripcion: ing.unidad || 'unidad'
+                  },
+                  create: {
+                    descripcion: ing.unidad || 'unidad'
+                  }
+                }
+              },
               ingrediente: {
                 connectOrCreate: {
                   where: {
@@ -515,6 +525,16 @@ export const updateRecipe = async (req: AuthRequest, res: Response) => {
             })),
             ...recipeData.utencilios.filter((f) => f.nombre !== undefined).map((ut) => ({
               cantidad: ut.cantidad ?? 1,
+              unidad: {
+                connectOrCreate: {
+                  where: {
+                    descripcion: ut.descripcion || 'unidad'
+                  },
+                  create: {
+                    descripcion: ut.descripcion || 'unidad'
+                  }
+                }
+              },
               utencilio: {
                 connectOrCreate: {
                   where: {
@@ -651,8 +671,8 @@ export function recipeParse(
         .map((u) => ({
           idUtilizado: u.idUtilizado,
           nombre: u.ingrediente?.nombre,
-          cantidad: u.cantidad,
-          unidad: u.unidad?.descripcion,
+          cantidad: u.cantidad ?? 1,
+          unidad: u.unidad?.descripcion ?? ((u.cantidad ?? 1) >= 100 ? 'g' : 'u'),
           observaciones: u.observaciones
         })) || [],
     utencilios:

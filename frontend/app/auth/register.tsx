@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import CustomScreenView from '@/components/CustomScreenView';
@@ -198,7 +198,6 @@ export default function RegisterScreen() {
   if (registrationStage === 'COMPLETE') {
     return (
       <CustomScreenView style={styles.container}>
-        <ScrollView>
           <View style={styles.header}>
             <Button onPress={() => setRegistrationStage('VERIFICATION')} style={styles.iconButton}>
               <Ionicons name="arrow-back" size={24} color="#1B1B1B" />
@@ -285,7 +284,6 @@ export default function RegisterScreen() {
               Completar Registro
             </Button>
           </View>
-        </ScrollView>
       </CustomScreenView>
     );
   }
